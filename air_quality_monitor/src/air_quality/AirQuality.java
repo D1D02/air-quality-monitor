@@ -21,11 +21,11 @@ public class AirQuality {
         this.measurementUnit = measurementUnit;
         
         String cleanedValue = valuePollutingStr
-                .trim()                       // Rimuove spazi bianchi
-                .replaceAll("\"", "")         // Rimuove le virgolette
-                .replace(".", "")             // Rimuove **PUNTI** usati come separatori di migliaia
-                .replace(",", ".");           // Sostituisce la VIRGOLA decimale con il PUNTO decimale
-                    
+                .trim()                      
+                .replaceAll("\"", "")        
+                .replace(".", "")            
+                .replace(",", ".");
+                        
         this.valuePolluting = Double.parseDouble(cleanedValue);  
             
     }
@@ -41,6 +41,10 @@ public class AirQuality {
     
     public String getYearMonthString() {
         return date.getYear() + "-" + String.format("%02d", date.getMonthValue());
+    }
+    
+    public String getYearString() { 
+        return String.valueOf(date.getYear());
     }
 
     public String getcodPolluting() {
@@ -58,10 +62,9 @@ public class AirQuality {
     @Override
     public String toString() {
         return "QualitaAria{" +
-               "date=" + date.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) +
-               ", codPolluting='" + codPolluting + '\'' +
-               ", valuePolluting=" + valuePolluting +
-               '}';
+                "date=" + date.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) +
+                ", codPolluting='" + codPolluting + '\'' +
+                ", valuePolluting=" + valuePolluting +
+                '}';
     }
-	
 }

@@ -36,10 +36,10 @@ public class CsvReader {
         
     }
 
-    public Map<String, Double> extractAndGroupAirQuality(String path) throws IOException {
+    public List<AirQuality> extractAirQuality(String path) throws IOException {
         
-        List<AirQuality> datiAria = Files.lines(Path.of(path))
-            .skip(1) 
+        return Files.lines(Path.of(path))
+            .skip(1)
             .map(linea -> linea.split(",", 6)) 
             .map(campi -> {
                 if (campi.length < 6) return null; 
@@ -58,11 +58,5 @@ public class CsvReader {
             .filter(d -> d != null)
             .filter(d -> d.getvaluePolluting() >= 0) 
             .collect(Collectors.toList());
-
-        return datiAria.stream()
-            .collect(Collectors.groupingBy(
-                aria -> aria.getYearMonthString() + "|" + aria.getcodPolluting(),
-                Collectors.averagingDouble(AirQuality::getvaluePolluting)
-            ));
     }
 }
