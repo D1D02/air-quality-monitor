@@ -4,6 +4,7 @@ import java.util.List;
 import java.io.IOException;
 import java.util.Map;
 
+import gui.AirQualityChart;
 import gui.AirQualityUI;
 import utility.CsvReader;
 import air_quality.Mortality;
@@ -19,7 +20,7 @@ public static void main(String[] args) {
         CsvReader estrattore = new CsvReader();
 
         try {
-            System.out.println("## 📉 Dati di Mortality Estratti:");
+            /*System.out.println("## 📉 Dati di Mortality Estratti:");
             List<Mortality> listaMorti = estrattore.extractMortality(FILE_MORTALITA);
             listaMorti.forEach(System.out::println);
             
@@ -51,7 +52,12 @@ public static void main(String[] args) {
             medieMensili.forEach((inquinante, media) -> {
                  System.out.printf("Mese: %d/%d, Inquinante: %s, Media Valore: %.4f%n", 
                                    MESE_DA_FILTRARE, ANNO_DA_FILTRARE, inquinante, media);
-            });
+            });*/
+            AirQualityStats stats = new AirQualityStats(estrattore.extractAirQuality("air_quality.csv"));
+
+            // Creo e mostro il grafico
+            AirQualityChart frame = new AirQualityChart(stats);
+            frame.setVisible(true);
 
         } catch (IOException e) {
             System.err.println("Errore di I/O durante la lettura dei file: " + e.getMessage());
