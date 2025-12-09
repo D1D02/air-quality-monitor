@@ -6,5 +6,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="lib" path="D:/IoT/air-quality-monitor/air_quality_monitor/lib/jfreechart-1.5.4.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
