@@ -6,6 +6,10 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="D:/IoT/air-quality-monitor/air_quality_monitor/lib/jfreechart-1.5.4.jar"/>
+	<classpathentry kind="lib" path="C:/Users/arrow/Documents/università/IOS/air-quality-monitor/air_quality_monitor/lib/jfreechart-1.5.4.jar"/>
+	<classpathentry kind="lib" path="C:/Users/arrow/Documents/università/IOS/air-quality-monitor/air_quality_monitor/lib/commons-9.4.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/arrow/Documents/università/IOS/air-quality-monitor/air_quality_monitor/lib/io-9.4.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/arrow/Documents/università/IOS/air-quality-monitor/air_quality_monitor/lib/kernel-9.4.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/arrow/Documents/università/IOS/air-quality-monitor/air_quality_monitor/lib/layout-9.4.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
