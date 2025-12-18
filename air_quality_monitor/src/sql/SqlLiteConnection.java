@@ -1,0 +1,37 @@
+package sql;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+public class SqlLiteConnection {
+    private static final String URL = "jdbc:sqlite:air_quality_data.db";
+
+    public static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(URL);
+    }
+
+    public static void initDatabase() {
+        String sqlAir = "CREATE TABLE IF NOT EXISTS air_quality (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        "data_ora TEXT, " +
+                        "inquinante TEXT, " +
+                        "unita TEXT, " +
+                        "valore REAL)";
+
+        String sqlMortality = "CREATE TABLE IF NOT EXISTS mortality (" +
+                              "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                              "malattia TEXT, " +
+                              "decessi INTEGER)";
+
+        try (Connection conn = getConnection(); 
+             Statement stmt = conn.createStatement()) {
+            stmt.execute(sqlAir);
+            stmt.execute(sqlMortality);
+            System.out.println("✅ Database inizializzato correttamente.");
+        } catch (SQLException e) {
+            System.err.println("❌ Errore inizializzazione DB: " + e.getMessage());
+        }
+    }
+}

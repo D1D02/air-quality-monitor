@@ -1,36 +1,55 @@
 package air_quality_monitor;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.io.IOException;
 import java.util.Map;
 
 import gui.AirQualityChart;
 import gui.AirQualityUI;
+import sql.SqlLiteConnection;
 import utility.CsvReader;
 import air_quality.Mortality;
 import air_quality.AirQuality;
 import air_quality.AirQualityStats;
 
 public class Main {
-	private static final String FILE_MORTALITA = "mortality.csv";
-    private static final String FILE_QUALITA_ARIA = "air_quality.csv";
+	private static final String FILE_PATTERN = "Datasets/QualitàAria_%d.csv";
+    private static final int START_YEAR = 2006;
+    private static final int END_YEAR = 2022;
 
 public static void main(String[] args) {
-        
-        CsvReader estrattore = new CsvReader();
+		
+		SqlLiteConnection.initDatabase();
+	
+		CsvReader estrattore = new CsvReader();
+	    List<AirQuality> datiAriaTotali = new ArrayList<>();
+	
+	    System.out.println("## ⏳ Caricamento dati Qualità Aria da " + START_YEAR + " a " + END_YEAR + "...");
+	
+	    for (int year = START_YEAR; year <= END_YEAR; year++) {
+	        String filePath = String.format(FILE_PATTERN, year);
+	        try {
+	            estrattore.importAirQualityToDb(filePath);
+	        } catch (IOException e) {
+	            System.err.printf("❌ Errore di I/O, file non trovato o non leggibile: %s. %s%n", filePath, e.getMessage());
+	        } catch (Exception e) {
+	             System.err.printf("❌ Errore generico durante l'elaborazione di %s: %s%n", filePath, e.getMessage());
+	        }
+	    }
+	    
+	    System.out.println("\n---");
+	    System.out.printf("## ✨ Caricamento Completato. Totale record: %d%n", datiAriaTotali.size());
+	    
+	    if (datiAriaTotali.isEmpty()) {
+	        System.out.println("Nessun dato valido caricato. Terminazione.");
+	        return;
+	    }
 
         try {
-            /*System.out.println("## 📉 Dati di Mortality Estratti:");
-            List<Mortality> listaMorti = estrattore.extractMortality(FILE_MORTALITA);
-            listaMorti.forEach(System.out::println);
-            
-            System.out.println("\n" + "---" + "\n");
+        	AirQualityStats stats = new AirQualityStats(datiAriaTotali);
 
-            List<AirQuality> listaAria = estrattore.extractAirQuality(FILE_QUALITA_ARIA);
-            
-            AirQualityStats stats = new AirQualityStats(listaAria);
-            
-            System.out.println("## 💨 Media Annuale Qualità Aria per Inquinante (Globale):");
+            System.out.println("\n## 💨 Media Annuale Qualità Aria per Inquinante (Globale):");
             Map<String, Double> medieAnnuali = stats.getAnnualAverageByPollutant();
             medieAnnuali.forEach((chiave, media) -> {
                  String[] parti = chiave.split("\\|");
@@ -38,28 +57,11 @@ public static void main(String[] args) {
                                    parti[0], parti[1], media);
             });
             
-            System.out.println("\n" + "---" + "\n");
-            
-            int ANNO_DA_FILTRARE = 2022;
-            int MESE_DA_FILTRARE = 1;
-            
-            System.out.printf("## 🔬 Media Mensile Qualità Aria per Inquinante (Mese %d/%d):%n", MESE_DA_FILTRARE, ANNO_DA_FILTRARE);
-            
-            AirQualityStats statsFiltrate = stats.filterByMonth(ANNO_DA_FILTRARE, MESE_DA_FILTRARE);
-            
-            Map<String, Double> medieMensili = statsFiltrate.getAverageByPollutant();
-            
-            medieMensili.forEach((inquinante, media) -> {
-                 System.out.printf("Mese: %d/%d, Inquinante: %s, Media Valore: %.4f%n", 
-                                   MESE_DA_FILTRARE, ANNO_DA_FILTRARE, inquinante, media);
-            });*/
-            AirQualityStats stats = new AirQualityStats(estrattore.extractAirQuality("air_quality.csv"));
-
             // Creo e mostro il grafico
             AirQualityChart frame = new AirQualityChart(stats);
             frame.setVisible(true);
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.println("Errore di I/O durante la lettura dei file: " + e.getMessage());
         }
     }

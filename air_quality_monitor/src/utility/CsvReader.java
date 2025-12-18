@@ -1,62 +1,107 @@
 package utility;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
-
+import org.apache.commons.csv.*;
 import air_quality.AirQuality;
-import air_quality.Mortality;
-
-
+import sql.SqlLiteConnection;
 
 public class CsvReader {
 
-    public List<Mortality> extractMortality(String path) throws IOException {
+    public void importMortalityToDb(String path) throws IOException, SQLException {
+        String sql = "INSERT INTO mortality (malattia, decessi) VALUES (?, ?)";
         
-        return Files.lines(Path.of(path))
-            .skip(1)
-            .map(linea -> linea.split(","))
-            .map(campi -> {
-                String malattia = campi[0].trim();
-                String mortiStr = campi[1].trim().replace(".", ""); 
+        try (Connection conn = SqlLiteConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            conn.setAutoCommit(false); 
+
+            try (Reader reader = Files.newBufferedReader(Path.of(path));
+                 CSVParser parser = CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).build().parse(reader)) {
                 
-                try {
-                    int numeroMorti = Integer.parseInt(mortiStr);
-                    return new Mortality(malattia, numeroMorti);
-                } catch (NumberFormatException e) {
-                    System.err.println("Errore nella conversione del numero di morti: " + mortiStr);
-                    return null; 
+                for (CSVRecord record : parser) {
+                    try {
+                        String malattia = record.get(0).trim();
+                        int morti = Integer.parseInt(record.get(1).trim().replace(".", ""));
+                        
+                        pstmt.setString(1, malattia);
+                        pstmt.setInt(2, morti);
+                        pstmt.addBatch();
+                    } catch (Exception ignored) {}
                 }
-            })
-            .filter(m -> m != null) 
-            .collect(Collectors.toList());
-        
+                pstmt.executeBatch();
+                conn.commit();
+                System.out.println("✅ Importazione mortalità completata.");
+            }
+        }
     }
 
-    public List<AirQuality> extractAirQuality(String path) throws IOException {
-        
-        return Files.lines(Path.of(path))
-            .skip(1)
-            .map(linea -> linea.split(",", 6)) 
-            .map(campi -> {
-                if (campi.length < 6) return null; 
-                
-                try {
-                    return new AirQuality(
-                        campi[2].trim(), 
-                        campi[3].trim(), 
-                        campi[4].trim(), 
-                        campi[5].trim() 
-                    );
-                } catch (Exception e) {
-                    return null; 
+
+    public void importAirQualityToDb(String path) throws IOException, SQLException {
+        String sql = "INSERT INTO air_quality (data_ora, inquinante, unita, valore) VALUES (?, ?, ?, ?)";
+
+        try (Connection conn = SqlLiteConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            conn.setAutoCommit(false); 
+
+            try (Reader reader = Files.newBufferedReader(Path.of(path));
+                 CSVParser parser = CSVFormat.DEFAULT.builder()
+                         .setHeader()
+                         .setSkipHeaderRecord(true)
+                         .setTrim(true)
+                         .setIgnoreSurroundingSpaces(true)
+                         .build()
+                         .parse(reader)) {
+
+                Map<String, String> headerMap = new HashMap<>();
+                parser.getHeaderMap().keySet().forEach(h -> headerMap.put(h.trim().toLowerCase(), h));
+                boolean hasOraSeparata = headerMap.containsKey("ora_misura");
+
+                int count = 0;
+                for (CSVRecord record : parser) {
+                    try {
+                        String dateStr, timeStr = null, cod, unit, valStr;
+
+                        if (hasOraSeparata) {
+                            dateStr = record.get(headerMap.get("data_misura"));
+                            timeStr = record.get(headerMap.get("ora_misura"));
+                            cod = record.get(headerMap.get("codice_inquinante"));
+                            unit = record.get(headerMap.get("unita_misura"));
+                            valStr = record.get(headerMap.get("valore_inquinante"));
+                        } else {
+                            dateStr = record.get(headerMap.get("data_rilevazione"));
+                            cod = record.get(headerMap.get("codice_inquinante"));
+                            unit = record.get(headerMap.get("unita_misura"));
+                            valStr = record.get(headerMap.get("valore_inquinante"));
+                        }
+
+                        AirQuality aq = new AirQuality(dateStr, timeStr, cod, unit, valStr);
+
+                        if (aq.getvaluePolluting() >= 0) {
+                            pstmt.setString(1, aq.getdate().toString()); 
+                            pstmt.setString(2, aq.getcodPolluting());
+                            pstmt.setString(3, aq.getmeasurementUnit());
+                            pstmt.setDouble(4, aq.getvaluePolluting());
+                            pstmt.addBatch();
+                            count++;
+                        }
+
+                        if (count % 5000 == 0) pstmt.executeBatch();
+
+                    } catch (Exception ignored) {}
                 }
-            })
-            .filter(d -> d != null)
-            .filter(d -> d.getvaluePolluting() >= 0) 
-            .collect(Collectors.toList());
+                pstmt.executeBatch();
+                conn.commit(); 
+                System.out.println("✅ Importati " + count + " record da: " + path);
+            }
+        }
     }
 }
