@@ -3,6 +3,7 @@ package air_quality_monitor;
 import java.util.ArrayList;
 import java.util.List;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Map;
 
 import gui.AirQualityChart;
@@ -10,6 +11,7 @@ import gui.AirQualityUI;
 import sql.SqlLiteConnection;
 import utility.CsvReader;
 import air_quality.Mortality;
+import dao.impl.AirQualityDAOImpl;
 import air_quality.AirQuality;
 import air_quality.AirQualityStats;
 
@@ -23,7 +25,6 @@ public static void main(String[] args) {
 		SqlLiteConnection.initDatabase();
 	
 		CsvReader estrattore = new CsvReader();
-	    List<AirQuality> datiAriaTotali = new ArrayList<>();
 	
 	    System.out.println("## ⏳ Caricamento dati Qualità Aria da " + START_YEAR + " a " + END_YEAR + "...");
 	
@@ -38,16 +39,10 @@ public static void main(String[] args) {
 	        }
 	    }
 	    
-	    System.out.println("\n---");
-	    System.out.printf("## ✨ Caricamento Completato. Totale record: %d%n", datiAriaTotali.size());
-	    
-	    if (datiAriaTotali.isEmpty()) {
-	        System.out.println("Nessun dato valido caricato. Terminazione.");
-	        return;
-	    }
+	 
 
         try {
-        	AirQualityStats stats = new AirQualityStats(datiAriaTotali);
+        	AirQualityStats stats = new AirQualityStats();
 
             System.out.println("\n## 💨 Media Annuale Qualità Aria per Inquinante (Globale):");
             Map<String, Double> medieAnnuali = stats.getAnnualAverageByPollutant();
@@ -58,7 +53,7 @@ public static void main(String[] args) {
             });
             
             // Creo e mostro il grafico
-            AirQualityChart frame = new AirQualityChart(stats);
+            AirQualityChart frame = new AirQualityChart(stats, 2022);
             frame.setVisible(true);
 
         } catch (Exception e) {
