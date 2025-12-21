@@ -28,6 +28,7 @@ public class SqlLiteConnection {
         String sqlMortality = "CREATE TABLE IF NOT EXISTS mortality (" +
                               "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                               "malattia TEXT, " +
+                              "anno INTEGER, " +
                               "decessi INTEGER)";
 
         try (Connection conn = getConnection(); 
