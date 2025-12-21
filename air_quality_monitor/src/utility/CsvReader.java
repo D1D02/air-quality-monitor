@@ -23,19 +23,47 @@ public class CsvReader {
     public void importMortalityToDb(String path) throws IOException, SQLException {
         List<Mortality> batch = new ArrayList<>();
         
+        CSVFormat format = CSVFormat.DEFAULT.builder()
+                .setDelimiter(';')
+                .setTrim(true)
+                .build();
+
         try (Reader reader = Files.newBufferedReader(Path.of(path));
-             CSVParser parser = CSVFormat.DEFAULT.builder()
-                     .setHeader().setSkipHeaderRecord(true).build().parse(reader)) {
+             CSVParser parser = format.parse(reader)) {
             
-            for (CSVRecord record : parser) {
+            List<CSVRecord> records = parser.getRecords();
+            if (records.isEmpty()) return;
+
+            CSVRecord headerYear = records.get(0);
+            List<Integer> years = new ArrayList<>();
+            for (int i = 1; i < headerYear.size(); i++) {
                 try {
-                    String malattia = record.get(0).trim();
-                    int morti = Integer.parseInt(record.get(1).trim().replace(".", ""));
-                    batch.add(new Mortality(malattia, morti));
-                } catch (Exception ignored) {}
+                    years.add(Integer.parseInt(headerYear.get(i).trim()));
+                } catch (NumberFormatException e) {
+                    years.add(-1); 
+                }
+            }
+
+            for (int i = 3; i < records.size(); i++) {
+                CSVRecord record = records.get(i);
+                String malattia = record.get(0).trim();
+                if (malattia.isEmpty()) continue;
+
+                for (int j = 1; j < record.size(); j++) {
+                    int colIdx = j - 1;
+                    if (colIdx < years.size() && years.get(colIdx) != -1) {
+                        try {
+                            String valStr = record.get(j).trim().replace(".", "");
+                            if (!valStr.equals("..")) { 
+                                int morti = Integer.parseInt(valStr);
+                                batch.add(new Mortality(malattia, years.get(colIdx), morti));
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                }
             }
             mortalityDAO.insertBatch(batch);
-            System.out.println("✅ Importazione mortalità completata.");
+            System.out.println("✅ Importazione mortalità (matrice) completata.");
         }
     }
 
