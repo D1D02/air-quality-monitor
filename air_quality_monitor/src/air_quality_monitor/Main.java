@@ -1,11 +1,13 @@
 package air_quality_monitor;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
 import gui.AirQualityChart;
 import sql.SqlLiteConnection;
 import utility.CsvReader;
+import utility.ReportService;
 import air_quality.AirQualityStats;
 
 public class Main {
@@ -41,7 +43,21 @@ public static void main(String[] args) {
             System.err.printf("❌ Errore generico durante l'elaborazione di %s: %s%n", FILE_PATTERN_M, e.getMessage());
        }
 
-        try {
+	   try {
+		   
+		   System.out.println("\n## 📄 Generazione Report Finale...");
+		   ReportService pdfService = new ReportService();
+		   pdfService.generatePdf(
+		       2016, 
+		       "Rapporto Ambientale e Sanitario", 
+		       "Questo documento analizza la correlazione tra la concentrazione di inquinanti atmosferici " +
+		       "e i tassi di mortalità per cause respiratorie e circolatorie nella regione Campania."
+		   );
+	   } catch (Exception e) {
+           System.err.println("Errore di I/O durante la lettura dei file: " + e.getMessage());
+       }
+	    
+       try {
         	AirQualityStats stats = new AirQualityStats();
         	
             System.out.println("\n## 💨 Media Annuale Qualità Aria per Inquinante (Globale):");
@@ -52,7 +68,6 @@ public static void main(String[] args) {
                                    parti[0], parti[1], media);
             });
             
-            // Creo e mostro il grafico
             AirQualityChart frame = new AirQualityChart(stats, 2016);
             frame.setVisible(true);
 
