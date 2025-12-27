@@ -11,10 +11,9 @@ public class AirQuality {
 	private static final DateTimeFormatter FORMATTER_LONG_NANO = 
 	        DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss.SSSSSSSSS");
 	    
-	    // FORMATTORE 2: DD-MMM-YY HH:mm (Schema 2006/2011)
 	private static final DateTimeFormatter FORMATTER_SHORT_IT =
 		    new DateTimeFormatterBuilder()
-		        .parseCaseInsensitive()   // ← QUESTO È IL FIX
+		        .parseCaseInsensitive()
 		        .appendPattern("dd-MMM-yy HH:mm")
 		        .toFormatter(Locale.ITALIAN);
 
@@ -28,7 +27,6 @@ public class AirQuality {
     public AirQuality(String dateStr, String timeStr, String codPolluting, 
 		            String measurementUnit, String valuePollutingStr) {
 		
-		// 1. Unisci data e ora se necessario
 		String fullDateStr = (timeStr == null || timeStr.trim().isEmpty()) 
 		                  ? dateStr.trim()
 		                  : dateStr.trim() + " " + timeStr.trim();
@@ -36,15 +34,12 @@ public class AirQuality {
 		LocalDateTime parsedDate = null;
 		
 		try {
-		 // TENTA 1: Formato ISO (quello che arriva dal Database: 2020-01-02T00:00)
 		 parsedDate = LocalDateTime.parse(fullDateStr);
 		} catch (DateTimeParseException e1) {
 		 try {
-		     // TENTA 2: Formato lungo con nanosecondi (CSV 2017/2022)
 		     parsedDate = LocalDateTime.parse(fullDateStr, FORMATTER_LONG_NANO);
 		 } catch (DateTimeParseException e2) {
 		     try {
-		         // TENTA 3: Formato corto italiano (CSV 2006/2011)
 		         parsedDate = LocalDateTime.parse(fullDateStr.toUpperCase(), FORMATTER_SHORT_IT);
 		     } catch (DateTimeParseException e3) {
 		         throw new IllegalArgumentException("Formato data non riconosciuto: " + fullDateStr);
@@ -56,13 +51,11 @@ public class AirQuality {
 		this.codPolluting = codPolluting;
 		this.measurementUnit = measurementUnit;
 		
-		// Pulizia valore (gestisce sia numeri con virgola che già puliti dal DB)
 		String cleanedValue = valuePollutingStr
 		     .trim()                      
 		     .replaceAll("\"", "")
 		     .replace(",", ".");
 		     
-		// Se dopo la pulizia il valore è un punto (es. da ".63"), aggiungiamo lo zero davanti
 		if (cleanedValue.startsWith(".")) cleanedValue = "0" + cleanedValue;
 		
 		this.valuePolluting = Double.parseDouble(cleanedValue);  

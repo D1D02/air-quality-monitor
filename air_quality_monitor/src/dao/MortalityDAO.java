@@ -10,6 +10,8 @@ public interface MortalityDAO
 {
 	public void insertBatch(List<Mortality> list) throws SQLException;
 	public Map<String, Integer> getDeathsByYear(int year) throws SQLException;
+	public Map<Integer, Map<String, Integer>> getDeathsByYears(int startYear, int endYear) 
+			throws SQLException ;
 	public Map<String, Integer> getTotalDeathsByIllness() throws SQLException;
     public List<Mortality> getAll() throws SQLException;
 }
