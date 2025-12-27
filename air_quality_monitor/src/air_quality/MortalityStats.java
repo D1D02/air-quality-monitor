@@ -14,4 +14,13 @@ public class MortalityStats {
             return Map.of();
         }
     }
+    
+    public Map<Integer, Map<String, Integer>> getStatsByYears(int startYear, int endYear) {
+        try {
+            return dao.getDeathsByYears(startYear, endYear);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Map.of();
+        }
+    }
 }

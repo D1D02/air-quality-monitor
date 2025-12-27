@@ -1,20 +1,19 @@
 package air_quality_monitor;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
 import gui.AirQualityChart;
+import service.ReportService;
 import sql.SqlLiteConnection;
 import utility.CsvReader;
-import utility.ReportService;
 import air_quality.AirQualityStats;
 
 public class Main {
 	private static final String FILE_PATTERN_AQ = "Datasets/QualitàAria_%d.csv";
 	private static final String FILE_PATTERN_M = "Datasets/MorteCampania_2006-2022.CSV";
-    private static final int START_YEAR = 2016;
-    private static final int END_YEAR = 2016;
+    private static final int START_YEAR = 2020;
+    private static final int END_YEAR = 2022;
 
 public static void main(String[] args) {
 		
@@ -44,11 +43,11 @@ public static void main(String[] args) {
        }
 
 	   try {
-		   
 		   System.out.println("\n## 📄 Generazione Report Finale...");
 		   ReportService pdfService = new ReportService();
 		   pdfService.generatePdf(
-		       2016, 
+			   START_YEAR,
+			   END_YEAR,
 		       "Rapporto Ambientale e Sanitario", 
 		       "Questo documento analizza la correlazione tra la concentrazione di inquinanti atmosferici " +
 		       "e i tassi di mortalità per cause respiratorie e circolatorie nella regione Campania."
