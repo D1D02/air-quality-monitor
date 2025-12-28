@@ -36,4 +36,6 @@ public class AirQualityStats {
             return Map.of();
         }
     }
+    
+    
 }

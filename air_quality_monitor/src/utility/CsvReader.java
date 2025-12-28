@@ -104,14 +104,13 @@ public class CsvReader {
                         count++;
                     }
 
-                    // Per risparmiare RAM, svuotiamo il batch nel DB ogni 5000 record
                     if (batch.size() >= 5000) {
                         airQualityDAO.insertBatch(batch);
                         batch.clear();
                     }
                 } catch (Exception ignored) {}
             }
-            // Inseriamo gli ultimi record rimanenti
+            
             if (!batch.isEmpty()) {
                 airQualityDAO.insertBatch(batch);
             }

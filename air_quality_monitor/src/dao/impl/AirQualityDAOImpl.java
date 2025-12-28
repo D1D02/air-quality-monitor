@@ -114,6 +114,17 @@ public class AirQualityDAOImpl implements AirQualityDAO {
         return stats;
     }
 
-	
+	@Override
+	public String getMostPollutedMonth(int year) throws SQLException {
+	    String sql = "SELECT strftime('%m', data_ora) as mese, AVG(valore) as media " +
+	                 "FROM air_quality WHERE strftime('%Y', data_ora) = ? " +
+	                 "GROUP BY mese ORDER BY media DESC LIMIT 1";
+	    try (Connection conn = SqlLiteConnection.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+	        pstmt.setString(1, String.valueOf(year));
+	        ResultSet rs = pstmt.executeQuery();
+	        return rs.next() ? rs.getString("mese") : "N/D";
+	    }
+	}
 	 
 }

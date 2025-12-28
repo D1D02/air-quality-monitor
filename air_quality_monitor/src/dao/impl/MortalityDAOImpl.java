@@ -40,6 +40,42 @@ public class MortalityDAOImpl implements MortalityDAO {
         }
         return stats;
     }
+    
+    @Override
+    public Map<Integer, Map<String, Integer>> getDeathsByYears(
+            int startYear, int endYear) throws SQLException {
+
+        Map<Integer, Map<String, Integer>> result = new HashMap<>();
+
+        String sql = """
+            SELECT anno, malattia, decessi
+            FROM mortality
+            WHERE anno BETWEEN ? AND ?
+        """;
+
+        try (Connection conn = SqlLiteConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, startYear);
+            pstmt.setInt(2, endYear);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    int year = rs.getInt("anno");
+                    String illness = rs.getString("malattia");
+                    int deaths = rs.getInt("decessi");
+
+                    result
+                        .computeIfAbsent(year, y -> new HashMap<>())
+                        .put(illness, deaths);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    
     @Override
     public Map<String, Integer> getTotalDeathsByIllness() throws SQLException {
         Map<String, Integer> stats = new HashMap<>();

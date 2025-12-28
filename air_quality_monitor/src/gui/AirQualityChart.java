@@ -12,30 +12,21 @@ public class AirQualityChart extends JFrame {
 
     private static final long serialVersionUID = 1L;
 
+    private JFreeChart chart;
+
     public AirQualityChart(AirQualityStats stats, int anno) {
         super("Analisi Qualità Aria - " + anno);
 
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        DefaultCategoryDataset dataset = createDataset(stats, anno);
 
-        for (int mese = 1; mese <= 12; mese++) {
-            Map<String, Double> medieMensili = stats.getMonthlyStats(anno, mese);
-
-            for (Map.Entry<String, Double> entry : medieMensili.entrySet()) {
-                String inquinante = entry.getKey();
-                Double valore = entry.getValue();
-                
-                dataset.addValue(valore, inquinante, String.valueOf(mese));
-            }
-        }
-
-        JFreeChart chart = ChartFactory.createLineChart(
+        this.chart = ChartFactory.createLineChart(
                 "Andamento Mensile Inquinanti (" + anno + ")",
                 "Mese dell'anno",               
                 "Valore Medio (µg/m3)",         
                 dataset
         );
 
-        ChartPanel chartPanel = new ChartPanel(chart);
+        ChartPanel chartPanel = new ChartPanel(this.chart);
         chartPanel.setPreferredSize(new java.awt.Dimension(1000, 600));
         chartPanel.setMouseWheelEnabled(true); 
 
@@ -44,5 +35,20 @@ public class AirQualityChart extends JFrame {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); 
         pack();
         setLocationRelativeTo(null);
+    }
+
+    private DefaultCategoryDataset createDataset(AirQualityStats stats, int anno) {
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        for (int mese = 1; mese <= 12; mese++) {
+            Map<String, Double> medieMensili = stats.getMonthlyStats(anno, mese);
+            for (Map.Entry<String, Double> entry : medieMensili.entrySet()) {
+                dataset.addValue(entry.getValue(), entry.getKey(), String.valueOf(mese));
+            }
+        }
+        return dataset;
+    }
+
+    public JFreeChart getChart() {
+        return this.chart;
     }
 }
