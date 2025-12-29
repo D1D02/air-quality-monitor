@@ -42,7 +42,7 @@ public class ReportService {
                ======================= */
 
             Map<String, Double> airQualityData =
-                    aqStats.getAnnualAverageByPollutant();
+                    aqStats.getStatsByYears(startYear, endYear);
 
             Map<Integer, Map<String, Integer>> mortalityData =
                     mStats.getStatsByYears(startYear, endYear);

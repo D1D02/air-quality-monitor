@@ -13,6 +13,7 @@ public interface AirQualityDAO
 	
 	public Map<String, Double> getAverageByPollutant() throws SQLException;
     public Map<String, Double> getAnnualAverageByPollutant() throws SQLException;
+    public Map<String, Double> getAnnualAveragesForPeriod(int startYear, int endYear) throws SQLException;
     public Map<String, Double> getAverageByMonth(int year, int month) throws SQLException;
     
     public String getMostPollutedMonth(int year) throws SQLException;
