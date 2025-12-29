@@ -37,5 +37,13 @@ public class AirQualityStats {
         }
     }
     
-    
+    public Map<String, Double> getStatsByYears(int startYear, int endYear) {
+        try {
+            return dao.getAnnualAveragesForPeriod(startYear, endYear);
+        } catch (SQLException e) {
+            System.err.println("❌ Errore nel recupero medie pluriennali aria: " + e.getMessage());
+            e.printStackTrace();
+            return Map.of();
+        }
+    }
 }

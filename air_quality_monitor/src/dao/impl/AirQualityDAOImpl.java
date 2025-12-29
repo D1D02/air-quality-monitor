@@ -91,6 +91,32 @@ public class AirQualityDAOImpl implements AirQualityDAO {
     }
 	
 	@Override
+	public Map<String, Double> getAnnualAveragesForPeriod(int startYear, int endYear) throws SQLException {
+	    Map<String, Double> stats = new HashMap<>();
+	    
+	    String sql = "SELECT strftime('%Y', data_ora) as anno, inquinante, AVG(valore) as media " +
+	                 "FROM air_quality " +
+	                 "WHERE anno BETWEEN ? AND ? " +
+	                 "GROUP BY anno, inquinante";
+
+	    try (Connection conn = SqlLiteConnection.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+	        
+	        pstmt.setString(1, String.valueOf(startYear));
+	        pstmt.setString(2, String.valueOf(endYear));
+	        
+	        try (ResultSet rs = pstmt.executeQuery()) {
+	            while (rs.next()) {
+	                // Chiave identica a quella usata nel CorrelationService: "anno|inquinante"
+	                String key = rs.getString("anno") + "|" + rs.getString("inquinante");
+	                stats.put(key, rs.getDouble("media"));
+	            }
+	        }
+	    }
+	    return stats;
+	}
+	
+	@Override
     public Map<String, Double> getAverageByMonth(int year, int month) throws SQLException {
         Map<String, Double> stats = new HashMap<>();
         String monthStr = String.format("%02d", month); 
