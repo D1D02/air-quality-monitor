@@ -5,10 +5,28 @@ import sql.SqlLiteConnection;
 import utility.CsvReader;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
+
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.data.time.TimeSeries;
+import org.jfree.data.time.TimeSeriesCollection;
+import org.jfree.data.time.Year;
+
+import air_quality.AirQualityStats;
+import air_quality.MortalityStats;
+
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class ReportAndChartFrame extends JFrame {
 	
@@ -113,7 +131,7 @@ public class ReportAndChartFrame extends JFrame {
                 mortalityModel,
                 this::loadMortalityCsv
         ));
-
+        
         add(filePanel, BorderLayout.CENTER);
 
         /* =======================
@@ -121,14 +139,15 @@ public class ReportAndChartFrame extends JFrame {
          ======================= */
         JButton pdfButton = createAccentButton("Genera PDF");
         JButton chartButton = createAccentButton("Genera Grafico");
-
-
         pdfButton.addActionListener(e -> generatePdf());
 
-        // Lasciato volutamente vuoto
-        //chartButton.addActionListener(e -> {
-            // TODO: implementare generazione grafico
-        //});
+        chartButton.addActionListener(e -> {
+            int startYear = (Integer) startYearSpinner.getValue();
+            int endYear = (Integer) endYearSpinner.getValue();
+
+            AirQualityChart chart = new AirQualityChart(startYear, endYear);
+            chart.setVisible(true);
+        });
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.add(pdfButton);
@@ -243,5 +262,4 @@ public class ReportAndChartFrame extends JFrame {
         btn.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
         return btn;
     }
-
 }
