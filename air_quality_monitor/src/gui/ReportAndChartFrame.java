@@ -1,127 +1,211 @@
 package gui;
 
-import air_quality.AirQualityStats;
 import service.ReportService;
 import sql.SqlLiteConnection;
 import utility.CsvReader;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 
 public class ReportAndChartFrame extends JFrame {
+	
+	private static final Color BG_DARK = new Color(32, 32, 32);
+	private static final Color BG_PANEL = new Color(45, 45, 45);
+	private static final Color FG_TEXT = new Color(230, 230, 230);
+	private static final Color ACCENT = new Color(38, 142, 255);
+
+	private static final Font UI_FONT = new Font("Segoe UI", Font.PLAIN, 13);
+
+
+    private DefaultListModel<File> airQualityModel = new DefaultListModel<>();
+    private DefaultListModel<File> mortalityModel = new DefaultListModel<>();
 
     private JSpinner startYearSpinner;
     private JSpinner endYearSpinner;
     private JTextField titleField;
     private JTextArea descriptionArea;
-    private DefaultListModel<File> fileListModel;
-    private JList<File> fileList;
+
+    private CsvReader estrattore;
 
     public ReportAndChartFrame() {
-        setTitle("Generazione Report e Grafici Qualità Aria");
-        setSize(700, 500);
+        setTitle("Report Qualità Aria e Mortalità");
+        setSize(800, 550);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+        SqlLiteConnection.initDatabase();
+        estrattore = new CsvReader();
+        
+        try {
+            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+        } catch (Exception ignored) {}
+        getContentPane().setBackground(BG_DARK);
+
 
         initUI();
     }
 
     private void initUI() {
-        // Pannello principale
-        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        JPanel inputPanel = new JPanel(new GridBagLayout());
+        setLayout(new BorderLayout(10, 10));
+
+        /* =======================
+           SEZIONE INPUT REPORT
+         ======================= */
+        JPanel reportPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5,5,5,5);
+        gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Spinner per START_YEAR
         gbc.gridx = 0; gbc.gridy = 0;
-        inputPanel.add(new JLabel("Anno Inizio:"), gbc);
-        startYearSpinner = new JSpinner(new SpinnerNumberModel(2016, 2000, 2050, 1));
+        reportPanel.add(new JLabel("Anno Inizio:"), gbc);
+        startYearSpinner = new JSpinner(new SpinnerNumberModel(2020, 2000, 2100, 1));
+        JSpinner.NumberEditor startEditor =
+                new JSpinner.NumberEditor(startYearSpinner, "####");
+        startYearSpinner.setEditor(startEditor);
         gbc.gridx = 1;
-        inputPanel.add(startYearSpinner, gbc);
+        reportPanel.add(startYearSpinner, gbc);
 
-        // Spinner per END_YEAR
         gbc.gridx = 0; gbc.gridy = 1;
-        inputPanel.add(new JLabel("Anno Fine:"), gbc);
-        endYearSpinner = new JSpinner(new SpinnerNumberModel(2022, 2000, 2050, 1));
-        gbc.gridx = 1;
-        inputPanel.add(endYearSpinner, gbc);
+        reportPanel.add(new JLabel("Anno Fine:"), gbc);
+        endYearSpinner = new JSpinner(new SpinnerNumberModel(2022, 2000, 2100, 1));
+        JSpinner.NumberEditor endEditor =
+                new JSpinner.NumberEditor(endYearSpinner, "####");
+        endYearSpinner.setEditor(endEditor);        gbc.gridx = 1;
+        reportPanel.add(endYearSpinner, gbc);
 
-        // Campo titolo PDF
         gbc.gridx = 0; gbc.gridy = 2;
-        inputPanel.add(new JLabel("Titolo PDF:"), gbc);
+        reportPanel.add(new JLabel("Titolo Report:"), gbc);
         titleField = new JTextField("Rapporto Ambientale e Sanitario");
         gbc.gridx = 1; gbc.gridwidth = 2;
-        inputPanel.add(titleField, gbc);
-        gbc.gridwidth = 1;
+        reportPanel.add(titleField, gbc);
 
-        // Area descrizione PDF
-        gbc.gridx = 0; gbc.gridy = 3;
-        gbc.anchor = GridBagConstraints.NORTH;
-        inputPanel.add(new JLabel("Descrizione PDF:"), gbc);
-        descriptionArea = new JTextArea(5, 30);
-        descriptionArea.setText("Questo documento analizza la correlazione tra la concentrazione di inquinanti atmosferici e i tassi di mortalità.");
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 1;
+        reportPanel.add(new JLabel("Descrizione:"), gbc);
+        descriptionArea = new JTextArea(4, 30);
         JScrollPane descScroll = new JScrollPane(descriptionArea);
-        gbc.gridx = 1;
-        inputPanel.add(descScroll, gbc);
+        gbc.gridx = 1; gbc.gridwidth = 2;
+        reportPanel.add(descScroll, gbc);
+        
+        styleComponent(titleField);
+        styleComponent(descriptionArea);
+        styleComponent(startYearSpinner);
+        styleComponent(endYearSpinner);
 
-        // Lista file CSV
-        fileListModel = new DefaultListModel<>();
-        fileList = new JList<>(fileListModel);
-        fileList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        JScrollPane fileScroll = new JScrollPane(fileList);
 
-        JButton loadButton = new JButton("Carica CSV");
-        JButton pdfButton = new JButton("Genera PDF");
-        JButton chartButton = new JButton("Visualizza Grafico");
+        add(reportPanel, BorderLayout.NORTH);
 
-        loadButton.addActionListener(e -> loadCsvFiles());
+        /* =======================
+           SEZIONE FILE CSV
+         ======================= */
+        JPanel filePanel = new JPanel(new GridLayout(1, 2, 10, 10));
+
+        filePanel.add(createCsvPanel(
+                "File Qualità Aria",
+                airQualityModel,
+                this::loadAirQualityCsv
+        ));
+
+        filePanel.add(createCsvPanel(
+                "File Mortalità",
+                mortalityModel,
+                this::loadMortalityCsv
+        ));
+
+        add(filePanel, BorderLayout.CENTER);
+
+        /* =======================
+           SEZIONE PULSANTI
+         ======================= */
+        JButton pdfButton = createAccentButton("Genera PDF");
+        JButton chartButton = createAccentButton("Genera Grafico");
+
+
         pdfButton.addActionListener(e -> generatePdf());
-        chartButton.addActionListener(e -> generateChart());
+
+        // Lasciato volutamente vuoto
+        //chartButton.addActionListener(e -> {
+            // TODO: implementare generazione grafico
+        //});
 
         JPanel buttonPanel = new JPanel();
-        buttonPanel.add(loadButton);
         buttonPanel.add(pdfButton);
         buttonPanel.add(chartButton);
 
-        mainPanel.add(inputPanel, BorderLayout.NORTH);
-        mainPanel.add(new JLabel("Dataset caricati:"), BorderLayout.CENTER);
-        mainPanel.add(fileScroll, BorderLayout.CENTER);
-        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
-
-        add(mainPanel);
+        add(buttonPanel, BorderLayout.SOUTH);
     }
 
-    private void loadCsvFiles() {
-        JFileChooser chooser = new JFileChooser();
-        chooser.setMultiSelectionEnabled(true);
-        chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("File CSV", "csv"));
+    /* =======================
+       CARICAMENTO CSV
+     ======================= */
+    private JPanel createCsvPanel(String title,
+                                  DefaultListModel<File> model,
+                                  Runnable loaderAction) {
 
-        int result = chooser.showOpenDialog(this);
-        if (result == JFileChooser.APPROVE_OPTION) {
-            for (File file : chooser.getSelectedFiles()) {
-                if (!fileListModel.contains(file)) {
-                    fileListModel.addElement(file);
-                }
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createTitledBorder(title));
+
+        JList<File> list = new JList<>(model);
+        JScrollPane scroll = new JScrollPane(list);
+
+        JButton loadButton = new JButton("Carica CSV");
+        loadButton.addActionListener(e -> loaderAction.run());
+
+        panel.add(scroll, BorderLayout.CENTER);
+        panel.add(loadButton, BorderLayout.SOUTH);
+        return panel;
+    }
+
+    private void loadAirQualityCsv() {
+        File[] files = chooseCsvFiles();
+        if (files == null) return;
+
+        for (File file : files) {
+            airQualityModel.addElement(file);
+            try {
+                estrattore.importAirQualityToDb(file.getAbsolutePath());
+            } catch (IOException e) {
+                showError("Errore caricamento Qualità Aria:\n" + e.getMessage());
+            } catch (Exception e) {
+            	showError("Errore:\n" + e.getMessage());
             }
         }
     }
 
-    private void generatePdf() {
-        File selectedFile = fileList.getSelectedValue();
-        if (selectedFile == null) {
-            JOptionPane.showMessageDialog(this, "Seleziona un file CSV", "Errore", JOptionPane.ERROR_MESSAGE);
-            return;
+    private void loadMortalityCsv() {
+        File[] files = chooseCsvFiles();
+        if (files == null) return;
+
+        for (File file : files) {
+            mortalityModel.addElement(file);
+            try {
+                estrattore.importMortalityToDb(file.getAbsolutePath());
+            } catch (IOException e) {
+                showError("Errore caricamento Mortalità:\n" + e.getMessage());
+            } catch (Exception e) {
+            	showError("Errore:\n" + e.getMessage());
+            }
         }
+    }
 
+    private File[] chooseCsvFiles() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setMultiSelectionEnabled(true);
+        chooser.setFileFilter(new FileNameExtensionFilter("File CSV", "csv"));
+
+        int result = chooser.showOpenDialog(this);
+        return (result == JFileChooser.APPROVE_OPTION)
+                ? chooser.getSelectedFiles()
+                : null;
+    }
+
+    /* =======================
+       GENERAZIONE PDF
+     ======================= */
+    private void generatePdf() {
         try {
-            SqlLiteConnection.initDatabase();
-            CsvReader reader = new CsvReader();
-            reader.importAirQualityToDb(selectedFile.getAbsolutePath());
-
             int startYear = (Integer) startYearSpinner.getValue();
             int endYear = (Integer) endYearSpinner.getValue();
             String title = titleField.getText();
@@ -130,46 +214,34 @@ public class ReportAndChartFrame extends JFrame {
             ReportService pdfService = new ReportService();
             pdfService.generatePdf(startYear, endYear, title, description);
 
-            JOptionPane.showMessageDialog(this, "PDF generato correttamente!", "Successo", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "PDF generato correttamente!",
+                    "Successo",
+                    JOptionPane.INFORMATION_MESSAGE);
 
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, "Errore I/O: " + e.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Errore: " + ex.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
-            ex.printStackTrace();
-        }
-    }
-
-    private void generateChart() {
-        File selectedFile = fileList.getSelectedValue();
-        if (selectedFile == null) {
-            JOptionPane.showMessageDialog(this, "Seleziona un file CSV", "Errore", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        try {
-            SqlLiteConnection.initDatabase();
-            CsvReader reader = new CsvReader();
-            reader.importAirQualityToDb(selectedFile.getAbsolutePath());
-
-            AirQualityStats stats = new AirQualityStats();
-            int year = extractYearFromFilename(selectedFile.getName());
-
-            gui.AirQualityChart chart = new gui.AirQualityChart(stats, year);
-            chart.setVisible(true);
-
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Errore generazione grafico: " + ex.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
-            ex.printStackTrace();
-        }
-    }
-
-    private int extractYearFromFilename(String filename) {
-        try {
-            String digits = filename.replaceAll("\\D+", "");
-            return Integer.parseInt(digits);
         } catch (Exception e) {
-            return 0;
+            showError("Errore durante la generazione PDF:\n" + e.getMessage());
         }
     }
+
+    private void showError(String message) {
+        JOptionPane.showMessageDialog(this, message, "Errore", JOptionPane.ERROR_MESSAGE);
+    }
+
+    private void styleComponent(JComponent c) {
+        c.setFont(UI_FONT);
+        c.setForeground(FG_TEXT);
+        c.setBackground(BG_PANEL);
+    }
+    
+    private JButton createAccentButton(String text) {
+        JButton btn = new JButton(text);
+        btn.setFont(UI_FONT);
+        btn.setForeground(Color.WHITE);
+        btn.setBackground(ACCENT);
+        btn.setFocusPainted(false);
+        btn.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
+        return btn;
+    }
+
 }
