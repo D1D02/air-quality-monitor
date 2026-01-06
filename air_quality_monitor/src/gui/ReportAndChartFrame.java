@@ -5,41 +5,29 @@ import sql.SqlLiteConnection;
 import utility.CsvReader;
 
 import javax.swing.*;
-import javax.swing.border.TitledBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
-
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
-import org.jfree.data.time.TimeSeries;
-import org.jfree.data.time.TimeSeriesCollection;
-import org.jfree.data.time.Year;
-
-import air_quality.AirQualityStats;
-import air_quality.MortalityStats;
-
 import java.awt.*;
 import java.io.File;
-import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
 
 public class ReportAndChartFrame extends JFrame {
-	
-	private static final Color BG_DARK = new Color(32, 32, 32);
-	private static final Color BG_PANEL = new Color(45, 45, 45);
-	private static final Color FG_TEXT = new Color(230, 230, 230);
-	private static final Color ACCENT = new Color(38, 142, 255);
 
-	private static final Font UI_FONT = new Font("Segoe UI", Font.PLAIN, 13);
+    /* =======================
+       THEME
+     ======================= */
+    private static final Color BG_DARK = new Color(28, 28, 30);
+    private static final Color BG_PANEL = new Color(40, 40, 42);
+    private static final Color FG_TEXT = new Color(230, 230, 235);
+    private static final Color FG_MUTED = new Color(170, 170, 175);
+    private static final Color ACCENT = new Color(56, 139, 253);
 
+    private static final Font UI_FONT = new Font("Segoe UI", Font.PLAIN, 13);
+    private static final Font TITLE_FONT = new Font("Segoe UI", Font.BOLD, 16);
 
-    private DefaultListModel<File> airQualityModel = new DefaultListModel<>();
-    private DefaultListModel<File> mortalityModel = new DefaultListModel<>();
+    /* =======================
+       MODEL
+     ======================= */
+    private final DefaultListModel<File> airQualityModel = new DefaultListModel<>();
+    private final DefaultListModel<File> mortalityModel = new DefaultListModel<>();
 
     private JSpinner startYearSpinner;
     private JSpinner endYearSpinner;
@@ -49,208 +37,195 @@ public class ReportAndChartFrame extends JFrame {
     private CsvReader estrattore;
 
     public ReportAndChartFrame() {
-        setTitle("Report Qualità Aria e Mortalità");
-        setSize(800, 550);
+        setTitle("Air Quality Monitor");
+        setSize(900, 600);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
-        SqlLiteConnection.initDatabase();
-        estrattore = new CsvReader();
-        
+        // 🔹 ICONA APP (metti /icons/app.png nelle resources)
+        //setIconImage(new ImageIcon(
+        //        getClass().getResource("/icons/app.png")
+        //).getImage());
+
         try {
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
         } catch (Exception ignored) {}
+
+        SqlLiteConnection.initDatabase();
+        estrattore = new CsvReader();
+
         getContentPane().setBackground(BG_DARK);
-
-
         initUI();
     }
 
+    /* =======================
+       UI
+     ======================= */
     private void initUI() {
-        setLayout(new BorderLayout(10, 10));
+        setLayout(new BorderLayout(15, 15));
+        add(createHeader(), BorderLayout.NORTH);
+        add(createCenter(), BorderLayout.CENTER);
+        add(createFooter(), BorderLayout.SOUTH);
+    }
 
-        /* =======================
-           SEZIONE INPUT REPORT
-         ======================= */
-        JPanel reportPanel = new JPanel(new GridBagLayout());
+    private JPanel createHeader() {
+        JPanel header = new JPanel(new GridBagLayout());
+        header.setBackground(BG_PANEL);
+        header.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = new Insets(6, 6, 6, 6);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         gbc.gridx = 0; gbc.gridy = 0;
-        reportPanel.add(new JLabel("Anno Inizio:"), gbc);
-        startYearSpinner = new JSpinner(new SpinnerNumberModel(2020, 2000, 2100, 1));
-        JSpinner.NumberEditor startEditor =
-                new JSpinner.NumberEditor(startYearSpinner, "####");
-        startYearSpinner.setEditor(startEditor);
+        header.add(createLabel("Anno Inizio"), gbc);
+
+        startYearSpinner = createYearSpinner(2020);
         gbc.gridx = 1;
-        reportPanel.add(startYearSpinner, gbc);
+        header.add(startYearSpinner, gbc);
+
+        gbc.gridx = 2;
+        header.add(createLabel("Anno Fine"), gbc);
+
+        endYearSpinner = createYearSpinner(2022);
+        gbc.gridx = 3;
+        header.add(endYearSpinner, gbc);
 
         gbc.gridx = 0; gbc.gridy = 1;
-        reportPanel.add(new JLabel("Anno Fine:"), gbc);
-        endYearSpinner = new JSpinner(new SpinnerNumberModel(2022, 2000, 2100, 1));
-        JSpinner.NumberEditor endEditor =
-                new JSpinner.NumberEditor(endYearSpinner, "####");
-        endYearSpinner.setEditor(endEditor);        gbc.gridx = 1;
-        reportPanel.add(endYearSpinner, gbc);
+        header.add(createLabel("Titolo report"), gbc);
 
-        gbc.gridx = 0; gbc.gridy = 2;
-        reportPanel.add(new JLabel("Titolo Report:"), gbc);
-        titleField = new JTextField("Rapporto Ambientale e Sanitario");
-        gbc.gridx = 1; gbc.gridwidth = 2;
-        reportPanel.add(titleField, gbc);
+        titleField = createTextField("Rapporto Ambientale e Sanitario");
+        gbc.gridx = 1; gbc.gridwidth = 3;
+        header.add(titleField, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 1;
-        reportPanel.add(new JLabel("Descrizione:"), gbc);
+        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 1;
+        header.add(createLabel("Descrizione"), gbc);
+
         descriptionArea = new JTextArea(4, 30);
-        JScrollPane descScroll = new JScrollPane(descriptionArea);
-        gbc.gridx = 1; gbc.gridwidth = 2;
-        reportPanel.add(descScroll, gbc);
-        
-        styleComponent(titleField);
         styleComponent(descriptionArea);
-        styleComponent(startYearSpinner);
-        styleComponent(endYearSpinner);
+        JScrollPane scroll = new JScrollPane(descriptionArea);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        scroll.getViewport().setBackground(BG_PANEL);
 
+        gbc.gridx = 1; gbc.gridwidth = 3;
+        header.add(scroll, gbc);
 
-        add(reportPanel, BorderLayout.NORTH);
+        return header;
+    }
 
-        /* =======================
-           SEZIONE FILE CSV
-         ======================= */
-        JPanel filePanel = new JPanel(new GridLayout(1, 2, 10, 10));
+    private JPanel createCenter() {
+        JPanel center = new JPanel(new GridLayout(1, 2, 15, 15));
+        center.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 15));
+        center.setBackground(BG_DARK);
 
-        filePanel.add(createCsvPanel(
-                "File Qualità Aria",
+        center.add(createCsvCard(
+                "Qualità Aria",
+                "Dataset ambientali",
                 airQualityModel,
                 this::loadAirQualityCsv
         ));
 
-        filePanel.add(createCsvPanel(
-                "File Mortalità",
+        center.add(createCsvCard(
+                "Mortalità",
+                "Dati sanitari",
                 mortalityModel,
                 this::loadMortalityCsv
         ));
-        
-        add(filePanel, BorderLayout.CENTER);
 
-        /* =======================
-           SEZIONE PULSANTI
-         ======================= */
+        return center;
+    }
+
+    private JPanel createFooter() {
+        JPanel footer = new JPanel();
+        footer.setBackground(BG_DARK);
+        footer.setBorder(BorderFactory.createEmptyBorder(10, 10, 15, 10));
+
         JButton pdfButton = createAccentButton("Genera PDF");
         JButton chartButton = createAccentButton("Genera Grafico");
+
         pdfButton.addActionListener(e -> generatePdf());
-
         chartButton.addActionListener(e -> {
-            int startYear = (Integer) startYearSpinner.getValue();
-            int endYear = (Integer) endYearSpinner.getValue();
-
-            AirQualityChart chart = new AirQualityChart(startYear, endYear);
-            chart.setVisible(true);
+            int start = (Integer) startYearSpinner.getValue();
+            int end = (Integer) endYearSpinner.getValue();
+            new AirQualityChart(start, end).setVisible(true);
         });
 
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.add(pdfButton);
-        buttonPanel.add(chartButton);
-
-        add(buttonPanel, BorderLayout.SOUTH);
+        footer.add(pdfButton);
+        footer.add(chartButton);
+        return footer;
     }
 
     /* =======================
-       CARICAMENTO CSV
+       CSV CARD
      ======================= */
-    private JPanel createCsvPanel(String title,
-                                  DefaultListModel<File> model,
-                                  Runnable loaderAction) {
+    private JPanel createCsvCard(String title,
+                                 String subtitle,
+                                 DefaultListModel<File> model,
+                                 Runnable loaderAction) {
 
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createTitledBorder(title));
+        JPanel card = new JPanel(new BorderLayout(10, 10));
+        card.setBackground(BG_PANEL);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(65, 65, 70)),
+                BorderFactory.createEmptyBorder(15, 15, 15, 15)
+        ));
+
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(TITLE_FONT);
+        titleLabel.setForeground(FG_TEXT);
+
+        JLabel subLabel = new JLabel(subtitle);
+        subLabel.setFont(UI_FONT);
+        subLabel.setForeground(FG_MUTED);
+
+        JPanel header = new JPanel(new GridLayout(2, 1));
+        header.setOpaque(false);
+        header.add(titleLabel);
+        header.add(subLabel);
 
         JList<File> list = new JList<>(model);
-        JScrollPane scroll = new JScrollPane(list);
+        styleList(list);
 
-        JButton loadButton = new JButton("Carica CSV");
+        JScrollPane scroll = new JScrollPane(list);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        scroll.getViewport().setBackground(BG_PANEL);
+
+        JButton loadButton = createAccentButton("＋ Aggiungi CSV");
         loadButton.addActionListener(e -> loaderAction.run());
 
-        panel.add(scroll, BorderLayout.CENTER);
-        panel.add(loadButton, BorderLayout.SOUTH);
-        return panel;
+        card.add(header, BorderLayout.NORTH);
+        card.add(scroll, BorderLayout.CENTER);
+        card.add(loadButton, BorderLayout.SOUTH);
+
+        return card;
     }
 
+    /* =======================
+       CSV LOAD
+     ======================= */
     private void loadAirQualityCsv() {
-
-        File[] files = chooseCsvFiles();
-        if (files == null || files.length == 0) return;
-
-        LoadingDialog dialog = new LoadingDialog(this, files.length);
-
-        SwingWorker<Void, Integer> worker = new SwingWorker<>() {
-
-            @Override
-            protected Void doInBackground() throws Exception {
-
-                for (int i = 0; i < files.length; i++) {
-
-                    if (dialog.isCancelled()) break;
-
-                    File file = files[i];
-
-                    // IMPORT PESANTE (THREAD BACKGROUND)
-                    estrattore.importAirQualityToDb(file.getAbsolutePath());
-
-                    publish(i + 1);
-                }
-                return null;
-            }
-
-            @Override
-            protected void process(java.util.List<Integer> chunks) {
-                int current = chunks.get(chunks.size() - 1);
-                dialog.update(current, files[current - 1].getName());
-            }
-
-            @Override
-            protected void done() {
-                dialog.dispose();
-
-                try {
-                    get();
-                    if (!dialog.isCancelled()) {
-                        for (File f : files) airQualityModel.addElement(f);
-                        JOptionPane.showMessageDialog(
-                                ReportAndChartFrame.this,
-                                "✅ Importazione Qualità Aria completata"
-                        );
-                    }
-                } catch (Exception e) {
-                    showError("Errore importazione:\n" + e.getMessage());
-                    e.printStackTrace();
-                }
-            }
-        };
-
-        worker.execute();
-        dialog.setVisible(true);
+        loadCsvGeneric(airQualityModel, true);
     }
-
 
     private void loadMortalityCsv() {
+        loadCsvGeneric(mortalityModel, false);
+    }
 
+    private void loadCsvGeneric(DefaultListModel<File> model, boolean air) {
         File[] files = chooseCsvFiles();
         if (files == null || files.length == 0) return;
 
         LoadingDialog dialog = new LoadingDialog(this, files.length);
 
         SwingWorker<Void, Integer> worker = new SwingWorker<>() {
-
             @Override
             protected Void doInBackground() throws Exception {
-
                 for (int i = 0; i < files.length; i++) {
-
                     if (dialog.isCancelled()) break;
-
-                    estrattore.importMortalityToDb(files[i].getAbsolutePath());
+                    if (air)
+                        estrattore.importAirQualityToDb(files[i].getAbsolutePath());
+                    else
+                        estrattore.importMortalityToDb(files[i].getAbsolutePath());
                     publish(i + 1);
                 }
                 return null;
@@ -258,25 +233,19 @@ public class ReportAndChartFrame extends JFrame {
 
             @Override
             protected void process(java.util.List<Integer> chunks) {
-                int current = chunks.get(chunks.size() - 1);
-                dialog.update(current, files[current - 1].getName());
+                int c = chunks.get(chunks.size() - 1);
+                dialog.update(c, files[c - 1].getName());
             }
 
             @Override
             protected void done() {
                 dialog.dispose();
-
                 try {
                     get();
-                    if (!dialog.isCancelled()) {
-                        for (File f : files) mortalityModel.addElement(f);
-                        JOptionPane.showMessageDialog(
-                                ReportAndChartFrame.this,
-                                "✅ Importazione Mortalità completata"
-                        );
-                    }
+                    if (!dialog.isCancelled())
+                        for (File f : files) model.addElement(f);
                 } catch (Exception e) {
-                    showError("Errore importazione:\n" + e.getMessage());
+                    showError(e.getMessage());
                 }
             }
         };
@@ -285,58 +254,80 @@ public class ReportAndChartFrame extends JFrame {
         dialog.setVisible(true);
     }
 
-
+    /* =======================
+       UTILS
+     ======================= */
     private File[] chooseCsvFiles() {
         JFileChooser chooser = new JFileChooser();
         chooser.setMultiSelectionEnabled(true);
         chooser.setFileFilter(new FileNameExtensionFilter("File CSV", "csv"));
-
-        int result = chooser.showOpenDialog(this);
-        return (result == JFileChooser.APPROVE_OPTION)
+        return chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION
                 ? chooser.getSelectedFiles()
                 : null;
     }
 
-    /* =======================
-       GENERAZIONE PDF
-     ======================= */
     private void generatePdf() {
         try {
-            int startYear = (Integer) startYearSpinner.getValue();
-            int endYear = (Integer) endYearSpinner.getValue();
-            String title = titleField.getText();
-            String description = descriptionArea.getText();
-
-            ReportService pdfService = new ReportService();
-            pdfService.generatePdf(startYear, endYear, title, description);
-
-            JOptionPane.showMessageDialog(this,
-                    "PDF generato correttamente!",
-                    "Successo",
-                    JOptionPane.INFORMATION_MESSAGE);
-
+            new ReportService().generatePdf(
+                    (Integer) startYearSpinner.getValue(),
+                    (Integer) endYearSpinner.getValue(),
+                    titleField.getText(),
+                    descriptionArea.getText()
+            );
+            JOptionPane.showMessageDialog(this, "PDF generato correttamente");
         } catch (Exception e) {
-            showError("Errore durante la generazione PDF:\n" + e.getMessage());
+            showError(e.getMessage());
         }
     }
 
-    private void showError(String message) {
-        JOptionPane.showMessageDialog(this, message, "Errore", JOptionPane.ERROR_MESSAGE);
+    private void showError(String msg) {
+        JOptionPane.showMessageDialog(this, msg, "Errore", JOptionPane.ERROR_MESSAGE);
+    }
+
+    /* =======================
+       STYLE HELPERS
+     ======================= */
+    private JLabel createLabel(String text) {
+        JLabel l = new JLabel(text);
+        l.setFont(UI_FONT);
+        l.setForeground(FG_MUTED);
+        return l;
+    }
+
+    private JTextField createTextField(String text) {
+        JTextField f = new JTextField(text);
+        styleComponent(f);
+        return f;
+    }
+
+    private JSpinner createYearSpinner(int value) {
+        JSpinner s = new JSpinner(new SpinnerNumberModel(value, 2000, 2100, 1));
+        styleComponent(s);
+        return s;
     }
 
     private void styleComponent(JComponent c) {
         c.setFont(UI_FONT);
         c.setForeground(FG_TEXT);
         c.setBackground(BG_PANEL);
+        c.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
     }
-    
+
+    private void styleList(JList<?> list) {
+        list.setFont(UI_FONT);
+        list.setBackground(BG_PANEL);
+        list.setForeground(FG_TEXT);
+        list.setSelectionBackground(ACCENT);
+        list.setSelectionForeground(Color.WHITE);
+    }
+
     private JButton createAccentButton(String text) {
-        JButton btn = new JButton(text);
-        btn.setFont(UI_FONT);
-        btn.setForeground(Color.WHITE);
-        btn.setBackground(ACCENT);
-        btn.setFocusPainted(false);
-        btn.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
-        return btn;
+        JButton b = new JButton(text);
+        b.setFont(UI_FONT);
+        b.setForeground(Color.WHITE);
+        b.setBackground(ACCENT);
+        b.setFocusPainted(false);
+        b.setBorder(BorderFactory.createEmptyBorder(8, 18, 8, 18));
+        return b;
     }
 }
