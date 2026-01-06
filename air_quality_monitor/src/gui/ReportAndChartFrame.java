@@ -43,9 +43,9 @@ public class ReportAndChartFrame extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
         // 🔹 ICONA APP (metti /icons/app.png nelle resources)
-        //setIconImage(new ImageIcon(
-        //        getClass().getResource("/icons/app.png")
-        //).getImage());
+        setIconImage(new ImageIcon(
+               getClass().getResource("/icons/app.png")
+        ).getImage());
 
         try {
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
