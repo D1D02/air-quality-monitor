@@ -178,36 +178,113 @@ public class ReportAndChartFrame extends JFrame {
     }
 
     private void loadAirQualityCsv() {
-        File[] files = chooseCsvFiles();
-        if (files == null) return;
 
-        for (File file : files) {
-            airQualityModel.addElement(file);
-            try {
-                estrattore.importAirQualityToDb(file.getAbsolutePath());
-            } catch (IOException e) {
-                showError("Errore caricamento Qualità Aria:\n" + e.getMessage());
-            } catch (Exception e) {
-            	showError("Errore:\n" + e.getMessage());
+        File[] files = chooseCsvFiles();
+        if (files == null || files.length == 0) return;
+
+        LoadingDialog dialog = new LoadingDialog(this, files.length);
+
+        SwingWorker<Void, Integer> worker = new SwingWorker<>() {
+
+            @Override
+            protected Void doInBackground() throws Exception {
+
+                for (int i = 0; i < files.length; i++) {
+
+                    if (dialog.isCancelled()) break;
+
+                    File file = files[i];
+
+                    // IMPORT PESANTE (THREAD BACKGROUND)
+                    estrattore.importAirQualityToDb(file.getAbsolutePath());
+
+                    publish(i + 1);
+                }
+                return null;
             }
-        }
+
+            @Override
+            protected void process(java.util.List<Integer> chunks) {
+                int current = chunks.get(chunks.size() - 1);
+                dialog.update(current, files[current - 1].getName());
+            }
+
+            @Override
+            protected void done() {
+                dialog.dispose();
+
+                try {
+                    get();
+                    if (!dialog.isCancelled()) {
+                        for (File f : files) airQualityModel.addElement(f);
+                        JOptionPane.showMessageDialog(
+                                ReportAndChartFrame.this,
+                                "✅ Importazione Qualità Aria completata"
+                        );
+                    }
+                } catch (Exception e) {
+                    showError("Errore importazione:\n" + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        worker.execute();
+        dialog.setVisible(true);
     }
+
 
     private void loadMortalityCsv() {
-        File[] files = chooseCsvFiles();
-        if (files == null) return;
 
-        for (File file : files) {
-            mortalityModel.addElement(file);
-            try {
-                estrattore.importMortalityToDb(file.getAbsolutePath());
-            } catch (IOException e) {
-                showError("Errore caricamento Mortalità:\n" + e.getMessage());
-            } catch (Exception e) {
-            	showError("Errore:\n" + e.getMessage());
+        File[] files = chooseCsvFiles();
+        if (files == null || files.length == 0) return;
+
+        LoadingDialog dialog = new LoadingDialog(this, files.length);
+
+        SwingWorker<Void, Integer> worker = new SwingWorker<>() {
+
+            @Override
+            protected Void doInBackground() throws Exception {
+
+                for (int i = 0; i < files.length; i++) {
+
+                    if (dialog.isCancelled()) break;
+
+                    estrattore.importMortalityToDb(files[i].getAbsolutePath());
+                    publish(i + 1);
+                }
+                return null;
             }
-        }
+
+            @Override
+            protected void process(java.util.List<Integer> chunks) {
+                int current = chunks.get(chunks.size() - 1);
+                dialog.update(current, files[current - 1].getName());
+            }
+
+            @Override
+            protected void done() {
+                dialog.dispose();
+
+                try {
+                    get();
+                    if (!dialog.isCancelled()) {
+                        for (File f : files) mortalityModel.addElement(f);
+                        JOptionPane.showMessageDialog(
+                                ReportAndChartFrame.this,
+                                "✅ Importazione Mortalità completata"
+                        );
+                    }
+                } catch (Exception e) {
+                    showError("Errore importazione:\n" + e.getMessage());
+                }
+            }
+        };
+
+        worker.execute();
+        dialog.setVisible(true);
     }
+
 
     private File[] chooseCsvFiles() {
         JFileChooser chooser = new JFileChooser();

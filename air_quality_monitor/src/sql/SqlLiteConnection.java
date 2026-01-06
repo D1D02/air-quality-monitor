@@ -14,9 +14,9 @@ public class SqlLiteConnection {
 
     public static void initDatabase() {
     	
-    	String dropAir = "DROP TABLE IF EXISTS air_quality";
+    	//String dropAir = "DROP TABLE IF EXISTS air_quality";
         
-    	String dropMortality = "DROP TABLE IF EXISTS mortality";
+    	//String dropMortality = "DROP TABLE IF EXISTS mortality";
         
         String sqlAir = "CREATE TABLE IF NOT EXISTS air_quality (" +
                         "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -33,8 +33,8 @@ public class SqlLiteConnection {
 
         try (Connection conn = getConnection(); 
              Statement stmt = conn.createStatement()) {
-        	stmt.execute(dropAir);
-            stmt.execute(dropMortality);
+        	//stmt.execute(dropAir);
+            //stmt.execute(dropMortality);
             stmt.execute(sqlAir);
             stmt.execute(sqlMortality);
             System.out.println("✅ Database inizializzato correttamente.");
