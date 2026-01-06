@@ -81,8 +81,8 @@ public class CsvSelectionFrame extends JFrame {
 
             int year = extractYearFromFilename(selectedFile.getName());
 
-            AirQualityChart chart = new AirQualityChart(stats, year);
-            chart.setVisible(true);
+            //AirQualityChart chart = new AirQualityChart(stats, year);
+            //chart.setVisible(true);
 
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,

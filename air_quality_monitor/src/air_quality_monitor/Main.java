@@ -1,6 +1,6 @@
 package air_quality_monitor;
 
-import gui.CsvSelectionFrame;
+import gui.ReportAndChartFrame;
 
 import javax.swing.SwingUtilities;
 
@@ -8,7 +8,7 @@ public class Main {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            CsvSelectionFrame frame = new CsvSelectionFrame();
+            ReportAndChartFrame frame = new ReportAndChartFrame();
             frame.setVisible(true);
         });
     }
