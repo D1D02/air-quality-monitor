@@ -32,6 +32,7 @@ public class AirQualityChart extends JFrame {
     private final MortalityStats mortStats = new MortalityStats();
 
     private int startYear, endYear;
+    private String region;
 
     private Set<String> selectedPollutants = new HashSet<>();
     private Set<String> selectedCauses = new HashSet<>();
@@ -44,10 +45,11 @@ public class AirQualityChart extends JFrame {
 
     private JPanel controlPanel;
 
-    public AirQualityChart(int startYear, int endYear) {
+    public AirQualityChart(int startYear, int endYear, String region) {
         this.startYear = startYear;
         this.endYear = endYear;
-
+        this.region = region;
+        
         setTitle("Andamento Qualità Aria e Mortalità");
         setSize(1000, 700);
         setLocationRelativeTo(null);
@@ -128,7 +130,7 @@ public class AirQualityChart extends JFrame {
     /* ======================= LOAD OPTIONS ======================= */
     private void loadAllOptions() {
         // Pollutants
-        Map<String, Double> airData = airStats.getStatsByYears(startYear, endYear);
+        Map<String, Double> airData = airStats.getStatsByYears(startYear, endYear, region);
         Set<String> pollutants = airData.keySet().stream()
                 .map(k -> k.split("\\|")[1])
                 .collect(Collectors.toSet());
@@ -136,7 +138,7 @@ public class AirQualityChart extends JFrame {
         // Mortality causes
         Set<String> causes = new HashSet<>();
         for (int y = startYear; y <= endYear; y++) {
-            causes.addAll(mortStats.getStatsByYear(y).keySet());
+            causes.addAll(mortStats.getStatsByYear(y, region).keySet());
         }
 
         // Panel con checkbox
@@ -147,7 +149,7 @@ public class AirQualityChart extends JFrame {
         JLabel l1 = new JLabel("Inquinanti:");
         l1.setForeground(FG_TEXT);
         checkboxPanel.add(l1);
-
+        
         for (String pollutant : pollutants) {
             JCheckBox cb = new JCheckBox(pollutant);
             cb.setForeground(FG_TEXT);
@@ -190,7 +192,7 @@ public class AirQualityChart extends JFrame {
         mortDataset.removeAllSeries();
 
         // Inquinanti
-        Map<String, Double> airData = airStats.getStatsByYears(startYear, endYear);
+        Map<String, Double> airData = airStats.getStatsByYears(startYear, endYear, region);
         for (String pollutant : selectedPollutants) {
             TimeSeries series = new TimeSeries(pollutant);
             for (int y = startYear; y <= endYear; y++) {
@@ -201,13 +203,24 @@ public class AirQualityChart extends JFrame {
         }
 
         // Mortalità
+        Map<Integer, Map<String, Integer>> mortData =
+                mortStats.getStatsByYears(startYear, endYear, region);
+
         for (String cause : selectedCauses) {
             TimeSeries series = new TimeSeries(cause);
+
             for (int y = startYear; y <= endYear; y++) {
-                Integer val = mortStats.getStatsByYear(y).get(cause);
-                if (val != null) series.add(new Year(y), val);
+                Map<String, Integer> yearData = mortData.get(y);
+                if (yearData != null && yearData.containsKey(cause)) {
+                    series.add(new Year(y), yearData.get(cause));
+                }
             }
-            if (!series.isEmpty()) mortDataset.addSeries(series);
+
+            if (!series.isEmpty()) {
+                mortDataset.addSeries(series);
+            }
         }
+
+
     }
 }

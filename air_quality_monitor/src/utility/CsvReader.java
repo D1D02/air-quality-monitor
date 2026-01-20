@@ -20,7 +20,7 @@ public class CsvReader {
     private final AirQualityDAOImpl airQualityDAO = new AirQualityDAOImpl();
     private final MortalityDAOImpl mortalityDAO = new MortalityDAOImpl();
 
-    public void importMortalityToDb(String path) throws IOException, SQLException {
+    public void importMortalityToDb(String path, String region) throws IOException, SQLException {
         List<Mortality> batch = new ArrayList<>();
         
         CSVFormat format = CSVFormat.DEFAULT.builder()
@@ -62,12 +62,12 @@ public class CsvReader {
                     }
                 }
             }
-            mortalityDAO.insertBatch(batch);
+            mortalityDAO.insertBatch(batch, region);
             System.out.println("✅ Importazione mortalità (matrice) completata.");
         }
     }
 
-    public void importAirQualityToDb(String path) throws IOException, SQLException {
+    public void importAirQualityToDb(String path, String region) throws IOException, SQLException {
         List<AirQuality> batch = new ArrayList<>();
         int count = 0;
 
@@ -105,14 +105,14 @@ public class CsvReader {
                     }
 
                     if (batch.size() >= 5000) {
-                        airQualityDAO.insertBatch(batch);
+                        airQualityDAO.insertBatch(batch, region);
                         batch.clear();
                     }
                 } catch (Exception ignored) {}
             }
             
             if (!batch.isEmpty()) {
-                airQualityDAO.insertBatch(batch);
+                airQualityDAO.insertBatch(batch, region);
             }
             System.out.println("✅ Importati " + count + " record da: " + path);
         }
