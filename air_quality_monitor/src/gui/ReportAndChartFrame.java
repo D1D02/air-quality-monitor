@@ -20,9 +20,14 @@ public class ReportAndChartFrame extends JFrame {
     private static final Color FG_MUTED = new Color(170, 170, 175);
     private static final Color ACCENT = new Color(56, 139, 253);
 
+    private static final Color BTN_BG = new Color(55, 55, 58);
+    private static final Color BTN_HOVER = new Color(70, 70, 74);
+    private static final Color BTN_BORDER = new Color(90, 90, 95);
+    private static final Color BTN_TEXT = new Color(235, 235, 240);
+    
     private static final Font UI_FONT = new Font("Segoe UI", Font.PLAIN, 13);
     private static final Font TITLE_FONT = new Font("Segoe UI", Font.BOLD, 16);
-
+    
     /* =======================
        REGIONI
      ======================= */
@@ -33,7 +38,7 @@ public class ReportAndChartFrame extends JFrame {
             "Sicilia", "Toscana", "Trentino-Alto Adige", "Umbria",
             "Valle d'Aosta", "Veneto"
     };
-
+	
     /* =======================
        MODEL
      ======================= */
@@ -154,8 +159,8 @@ public class ReportAndChartFrame extends JFrame {
         footer.setBackground(BG_DARK);
         footer.setBorder(BorderFactory.createEmptyBorder(10, 10, 15, 10));
 
-        JButton pdfButton = createAccentButton("Genera PDF");
-        JButton chartButton = createAccentButton("Genera Grafico");
+        JButton pdfButton = createFlatButton("Genera PDF");
+        JButton chartButton = createFlatButton("Genera Grafico");
 
         pdfButton.addActionListener(e -> generatePdf());
         chartButton.addActionListener(e -> {
@@ -205,7 +210,7 @@ public class ReportAndChartFrame extends JFrame {
         scroll.setBorder(BorderFactory.createEmptyBorder());
         scroll.getViewport().setBackground(BG_PANEL);
 
-        JButton loadButton = createAccentButton("＋ Aggiungi CSV");
+        JButton loadButton = createFlatButton("＋ Aggiungi CSV");
         loadButton.addActionListener(e -> loadCsvWithRegion(model, air));
 
         card.add(header, BorderLayout.NORTH);
@@ -342,13 +347,50 @@ public class ReportAndChartFrame extends JFrame {
         list.setSelectionForeground(Color.WHITE);
     }
 
-    private JButton createAccentButton(String text) {
+    private JButton createPrimaryButton(String text) {
         JButton b = new JButton(text);
-        b.setFont(UI_FONT);
+        b.setFont(UI_FONT.deriveFont(Font.BOLD));
         b.setForeground(Color.WHITE);
         b.setBackground(ACCENT);
         b.setFocusPainted(false);
-        b.setBorder(BorderFactory.createEmptyBorder(8, 18, 8, 18));
+        b.setBorder(BorderFactory.createEmptyBorder(10, 22, 10, 22));
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        b.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                b.setBackground(ACCENT.brighter());
+            }
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                b.setBackground(ACCENT);
+            }
+        });
+
         return b;
     }
+
+    private JButton createFlatButton(String text) {
+        JButton b = new JButton(text);
+        b.setFont(UI_FONT);
+        b.setForeground(BTN_TEXT);
+        b.setBackground(BTN_BG);
+        b.setFocusPainted(false);
+        b.setContentAreaFilled(true);
+        b.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BTN_BORDER),
+                BorderFactory.createEmptyBorder(8, 18, 8, 18)
+        ));
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        b.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                b.setBackground(BTN_HOVER);
+            }
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                b.setBackground(BTN_BG);
+            }
+        });
+
+        return b;
+    }
+
 }
