@@ -28,7 +28,7 @@ public class ReportService {
         }
     }
 
-    public void generatePdf(int startYear, int endYear, String title, String description) {
+    public void generatePdf(int startYear, int endYear, String title, String description, String region) {
 
         Document document = new Document(PageSize.A4.rotate());
         List<CorrelationResult> allResults = new ArrayList<>();
@@ -42,10 +42,10 @@ public class ReportService {
                ======================= */
 
             Map<String, Double> airQualityData =
-                    aqStats.getStatsByYears(startYear, endYear);
+                    aqStats.getStatsByYears(startYear, endYear, region);
 
             Map<Integer, Map<String, Integer>> mortalityData =
-                    mStats.getStatsByYears(startYear, endYear);
+                    mStats.getStatsByYears(startYear, endYear, region);
 
             Set<String> pollutants = extractPollutants(airQualityData);
             Set<String> illnesses = extractIllnesses(mortalityData);

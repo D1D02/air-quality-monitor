@@ -16,24 +16,22 @@ import org.jfree.data.time.Year;
 import javax.swing.*;
 import java.awt.*;
 import java.util.*;
-import java.util.List;
 import java.util.stream.Collectors;
 
 public class AirQualityChart extends JFrame {
 
-    /* ======================= THEME ======================= */
     private static final Color BG_DARK = new Color(28, 28, 30);
     private static final Color BG_PANEL = new Color(40, 40, 42);
     private static final Color FG_TEXT = new Color(230, 230, 235);
-    private static final Color FG_MUTED = new Color(170, 170, 175);
     private static final Color ACCENT = new Color(56, 139, 253);
 
     private final AirQualityStats airStats = new AirQualityStats();
     private final MortalityStats mortStats = new MortalityStats();
 
     private int startYear, endYear;
+    private String region;
 
-    private Set<String> selectedPollutants = new HashSet<>();
+    private String selectedPollutant = null; // solo uno
     private Set<String> selectedCauses = new HashSet<>();
 
     private TimeSeriesCollection airDataset = new TimeSeriesCollection();
@@ -44,26 +42,23 @@ public class AirQualityChart extends JFrame {
 
     private JPanel controlPanel;
 
-    public AirQualityChart(int startYear, int endYear) {
+    public AirQualityChart(int startYear, int endYear, String region) {
         this.startYear = startYear;
         this.endYear = endYear;
+        this.region = region;
 
         setTitle("Andamento Qualità Aria e Mortalità");
         setSize(1000, 700);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        
-        setIconImage(new ImageIcon(
-                getClass().getResource("/icons/app.png")
-         ).getImage());
-        
+
         getContentPane().setBackground(BG_DARK);
         setLayout(new BorderLayout(10, 10));
 
         chart = ChartFactory.createTimeSeriesChart(
                 "Qualità Aria e Mortalità (" + startYear + " - " + endYear + ")",
                 "Anno",
-                "Valore",
+                "Valore Inquinante",
                 airDataset,
                 true,
                 true,
@@ -74,6 +69,7 @@ public class AirQualityChart extends JFrame {
 
         // Asse secondario per mortalità
         NumberAxis mortalityAxis = new NumberAxis("Mortalità");
+        mortalityAxis.setAutoRangeIncludesZero(false);
         plot.setRangeAxis(1, mortalityAxis);
         plot.setDataset(1, mortDataset);
         plot.mapDatasetToRangeAxis(1, 1);
@@ -81,22 +77,27 @@ public class AirQualityChart extends JFrame {
         // Renderer
         XYLineAndShapeRenderer airRenderer = new XYLineAndShapeRenderer(true, false);
         XYLineAndShapeRenderer mortRenderer = new XYLineAndShapeRenderer(true, false);
+
+        airRenderer.setDefaultStroke(new BasicStroke(2f));
+        mortRenderer.setDefaultStroke(new BasicStroke(2f));
+
+        // Colori fissi
+        airRenderer.setSeriesPaint(0, ACCENT);
+        mortRenderer.setSeriesPaint(0, Color.RED);
+
         plot.setRenderer(0, airRenderer);
         plot.setRenderer(1, mortRenderer);
 
-        // Stile base
         plot.setBackgroundPaint(BG_PANEL);
         plot.setDomainGridlinePaint(Color.GRAY);
         plot.setRangeGridlinePaint(Color.GRAY);
 
-        // ChartPanel interattivo
         ChartPanel chartPanel = new ChartPanel(chart);
-        chartPanel.setMouseWheelEnabled(true); // zoom con rotellina
+        chartPanel.setMouseWheelEnabled(true);
         chartPanel.setDomainZoomable(true);
         chartPanel.setRangeZoomable(true);
         chartPanel.setBackground(BG_PANEL);
 
-        // Pannello di selezione inquinanti/malattie
         controlPanel = createControlPanel();
 
         add(controlPanel, BorderLayout.WEST);
@@ -106,7 +107,6 @@ public class AirQualityChart extends JFrame {
         updateChart();
     }
 
-    /* ======================= CONTROL PANEL ======================= */
     private JPanel createControlPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -119,45 +119,40 @@ public class AirQualityChart extends JFrame {
         panel.add(title);
         panel.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        // Scroll pane per checkboxes
-        panel.add(new JScrollPane(new JPanel())); // placeholder, riempito in loadAllOptions()
-
+        panel.add(new JScrollPane(new JPanel())); // placeholder
         return panel;
     }
 
-    /* ======================= LOAD OPTIONS ======================= */
     private void loadAllOptions() {
-        // Pollutants
-        Map<String, Double> airData = airStats.getStatsByYears(startYear, endYear);
+        Map<String, Double> airData = airStats.getStatsByYears(startYear, endYear, region);
         Set<String> pollutants = airData.keySet().stream()
                 .map(k -> k.split("\\|")[1])
                 .collect(Collectors.toSet());
 
-        // Mortality causes
         Set<String> causes = new HashSet<>();
         for (int y = startYear; y <= endYear; y++) {
-            causes.addAll(mortStats.getStatsByYear(y).keySet());
+            causes.addAll(mortStats.getStatsByYear(y, region).keySet());
         }
 
-        // Panel con checkbox
         JPanel checkboxPanel = new JPanel();
         checkboxPanel.setLayout(new BoxLayout(checkboxPanel, BoxLayout.Y_AXIS));
         checkboxPanel.setBackground(BG_PANEL);
 
-        JLabel l1 = new JLabel("Inquinanti:");
+        JLabel l1 = new JLabel("Inquinanti (uno alla volta):");
         l1.setForeground(FG_TEXT);
         checkboxPanel.add(l1);
 
+        ButtonGroup pollutantGroup = new ButtonGroup();
         for (String pollutant : pollutants) {
-            JCheckBox cb = new JCheckBox(pollutant);
-            cb.setForeground(FG_TEXT);
-            cb.setBackground(BG_PANEL);
-            cb.addActionListener(e -> {
-                if (cb.isSelected()) selectedPollutants.add(pollutant);
-                else selectedPollutants.remove(pollutant);
+            JRadioButton rb = new JRadioButton(pollutant);
+            rb.setForeground(FG_TEXT);
+            rb.setBackground(BG_PANEL);
+            rb.addActionListener(e -> {
+                selectedPollutant = rb.isSelected() ? pollutant : null;
                 updateChart();
             });
-            checkboxPanel.add(cb);
+            pollutantGroup.add(rb);
+            checkboxPanel.add(rb);
         }
 
         JLabel l2 = new JLabel("Cause Mortalità:");
@@ -178,36 +173,42 @@ public class AirQualityChart extends JFrame {
         }
 
         JScrollPane scroll = new JScrollPane(checkboxPanel);
-        scroll.setPreferredSize(new Dimension(200, 500));
+        scroll.setPreferredSize(new Dimension(220, 500));
         controlPanel.add(scroll);
         controlPanel.revalidate();
         controlPanel.repaint();
     }
 
-    /* ======================= UPDATE CHART ======================= */
     private void updateChart() {
         airDataset.removeAllSeries();
         mortDataset.removeAllSeries();
 
-        // Inquinanti
-        Map<String, Double> airData = airStats.getStatsByYears(startYear, endYear);
-        for (String pollutant : selectedPollutants) {
-            TimeSeries series = new TimeSeries(pollutant);
+        Map<String, Double> airData = airStats.getStatsByYears(startYear, endYear, region);
+        if (selectedPollutant != null) {
+            TimeSeries series = new TimeSeries(selectedPollutant);
             for (int y = startYear; y <= endYear; y++) {
-                Double val = airData.get(y + "|" + pollutant);
+                Double val = airData.get(y + "|" + selectedPollutant);
                 if (val != null) series.add(new Year(y), val);
             }
             if (!series.isEmpty()) airDataset.addSeries(series);
         }
 
-        // Mortalità
+        Map<Integer, Map<String, Integer>> mortData =
+                mortStats.getStatsByYears(startYear, endYear, region);
+
         for (String cause : selectedCauses) {
             TimeSeries series = new TimeSeries(cause);
             for (int y = startYear; y <= endYear; y++) {
-                Integer val = mortStats.getStatsByYear(y).get(cause);
-                if (val != null) series.add(new Year(y), val);
+                Map<String, Integer> yearData = mortData.get(y);
+                if (yearData != null && yearData.containsKey(cause)) {
+                    series.add(new Year(y), yearData.get(cause));
+                }
             }
             if (!series.isEmpty()) mortDataset.addSeries(series);
         }
+
+        plot.getRangeAxis(0).setAutoRange(true);
+        plot.getRangeAxis(1).setAutoRange(true);
     }
+
 }

@@ -9,11 +9,26 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.io.File;
 
+
+
 public class CsvSelectionFrame extends JFrame {
 
     private DefaultListModel<File> fileListModel;
     private JList<File> fileList;
 
+    private JComboBox<String> regionCombo;
+    private String selectedRegion;
+
+    private static final String[] REGIONS = {
+    	    "Abruzzo", "Basilicata", "Calabria", "Campania",
+    	    "Emilia-Romagna", "Friuli-Venezia Giulia", "Lazio",
+    	    "Liguria", "Lombardia", "Marche", "Molise",
+    	    "Piemonte", "Puglia", "Sardegna", "Sicilia",
+    	    "Toscana", "Trentino-Alto Adige", "Umbria",
+    	    "Valle d'Aosta", "Veneto"
+    	};
+
+    
     public CsvSelectionFrame() {
         setTitle("Selezione Dataset Qualità Aria");
         setSize(600, 400);
@@ -40,7 +55,19 @@ public class CsvSelectionFrame extends JFrame {
         buttonPanel.add(loadButton);
         buttonPanel.add(chartButton);
 
-        add(new JLabel("Dataset caricati:"), BorderLayout.NORTH);
+        regionCombo = new JComboBox<>(REGIONS);
+        regionCombo.setSelectedIndex(-1);
+
+        regionCombo.addActionListener(e ->
+                selectedRegion = (String) regionCombo.getSelectedItem()
+        );
+
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.add(new JLabel("Regione:"), BorderLayout.WEST);
+        topPanel.add(regionCombo, BorderLayout.CENTER);
+
+        add(topPanel, BorderLayout.NORTH);
+
         add(scrollPane, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
     }
@@ -62,6 +89,14 @@ public class CsvSelectionFrame extends JFrame {
 
     private void generateChart() {
         File selectedFile = fileList.getSelectedValue();
+        if (selectedRegion == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Seleziona una regione",
+                    "Errore",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         if (selectedFile == null) {
             JOptionPane.showMessageDialog(this,
                     "Seleziona un file CSV",
@@ -75,7 +110,10 @@ public class CsvSelectionFrame extends JFrame {
             SqlLiteConnection.initDatabase();
 
             CsvReader reader = new CsvReader();
-            reader.importAirQualityToDb(selectedFile.getAbsolutePath());
+            reader.importAirQualityToDb(
+                    selectedFile.getAbsolutePath(),
+                    selectedRegion
+            );
 
             AirQualityStats stats = new AirQualityStats();
 

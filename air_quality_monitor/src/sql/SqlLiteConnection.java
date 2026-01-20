@@ -23,13 +23,15 @@ public class SqlLiteConnection {
                         "data_ora TEXT, " +
                         "inquinante TEXT, " +
                         "unita TEXT, " +
-                        "valore REAL)";
+                        "valore REAL," + 
+                        "regione TEXT)";
 
         String sqlMortality = "CREATE TABLE IF NOT EXISTS mortality (" +
                               "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                               "malattia TEXT, " +
                               "anno INTEGER, " +
-                              "decessi INTEGER)";
+                              "decessi INTEGER," + 
+                              "regione TEXT)";
 
         try (Connection conn = getConnection(); 
              Statement stmt = conn.createStatement()) {

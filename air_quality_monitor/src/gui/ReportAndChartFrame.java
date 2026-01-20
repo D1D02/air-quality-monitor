@@ -20,9 +20,25 @@ public class ReportAndChartFrame extends JFrame {
     private static final Color FG_MUTED = new Color(170, 170, 175);
     private static final Color ACCENT = new Color(56, 139, 253);
 
+    private static final Color BTN_BG = new Color(55, 55, 58);
+    private static final Color BTN_HOVER = new Color(70, 70, 74);
+    private static final Color BTN_BORDER = new Color(90, 90, 95);
+    private static final Color BTN_TEXT = new Color(235, 235, 240);
+    
     private static final Font UI_FONT = new Font("Segoe UI", Font.PLAIN, 13);
     private static final Font TITLE_FONT = new Font("Segoe UI", Font.BOLD, 16);
-
+    
+    /* =======================
+       REGIONI
+     ======================= */
+    private static final String[] REGIONI = {
+            "Abruzzo", "Basilicata", "Calabria", "Campania", "Emilia-Romagna",
+            "Friuli-Venezia Giulia", "Lazio", "Liguria", "Lombardia",
+            "Marche", "Molise", "Piemonte", "Puglia", "Sardegna",
+            "Sicilia", "Toscana", "Trentino-Alto Adige", "Umbria",
+            "Valle d'Aosta", "Veneto"
+    };
+	
     /* =======================
        MODEL
      ======================= */
@@ -33,19 +49,15 @@ public class ReportAndChartFrame extends JFrame {
     private JSpinner endYearSpinner;
     private JTextField titleField;
     private JTextArea descriptionArea;
+    private JComboBox<String> regionComboGlobal;
 
     private CsvReader estrattore;
 
     public ReportAndChartFrame() {
         setTitle("Air Quality Monitor");
-        setSize(900, 600);
+        setSize(950, 620);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-
-        // 🔹 ICONA APP (metti /icons/app.png nelle resources)
-        setIconImage(new ImageIcon(
-               getClass().getResource("/icons/app.png")
-        ).getImage());
 
         try {
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
@@ -77,37 +89,44 @@ public class ReportAndChartFrame extends JFrame {
         gbc.insets = new Insets(6, 6, 6, 6);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
+        // Regione globale
         gbc.gridx = 0; gbc.gridy = 0;
-        header.add(createLabel("Anno Inizio"), gbc);
+        header.add(createLabel("Regione"), gbc);
 
-        startYearSpinner = createYearSpinner(2020);
+        regionComboGlobal = new JComboBox<>(REGIONI);
+        styleComponent(regionComboGlobal);
         gbc.gridx = 1;
+        header.add(regionComboGlobal, gbc);
+
+        // Anni
+        gbc.gridx = 2;
+        header.add(createLabel("Anno Inizio"), gbc);
+        startYearSpinner = createYearSpinner(2020);
+        gbc.gridx = 3;
         header.add(startYearSpinner, gbc);
 
-        gbc.gridx = 2;
+        gbc.gridx = 4;
         header.add(createLabel("Anno Fine"), gbc);
-
         endYearSpinner = createYearSpinner(2022);
-        gbc.gridx = 3;
+        gbc.gridx = 5;
         header.add(endYearSpinner, gbc);
 
+        // Titolo
         gbc.gridx = 0; gbc.gridy = 1;
         header.add(createLabel("Titolo report"), gbc);
-
         titleField = createTextField("Rapporto Ambientale e Sanitario");
-        gbc.gridx = 1; gbc.gridwidth = 3;
+        gbc.gridx = 1; gbc.gridwidth = 5;
         header.add(titleField, gbc);
 
+        // Descrizione
         gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 1;
         header.add(createLabel("Descrizione"), gbc);
-
         descriptionArea = new JTextArea(4, 30);
         styleComponent(descriptionArea);
         JScrollPane scroll = new JScrollPane(descriptionArea);
         scroll.setBorder(BorderFactory.createEmptyBorder());
         scroll.getViewport().setBackground(BG_PANEL);
-
-        gbc.gridx = 1; gbc.gridwidth = 3;
+        gbc.gridx = 1; gbc.gridwidth = 5;
         header.add(scroll, gbc);
 
         return header;
@@ -122,14 +141,14 @@ public class ReportAndChartFrame extends JFrame {
                 "Qualità Aria",
                 "Dataset ambientali",
                 airQualityModel,
-                this::loadAirQualityCsv
+                true
         ));
 
         center.add(createCsvCard(
                 "Mortalità",
                 "Dati sanitari",
                 mortalityModel,
-                this::loadMortalityCsv
+                false
         ));
 
         return center;
@@ -140,14 +159,17 @@ public class ReportAndChartFrame extends JFrame {
         footer.setBackground(BG_DARK);
         footer.setBorder(BorderFactory.createEmptyBorder(10, 10, 15, 10));
 
-        JButton pdfButton = createAccentButton("Genera PDF");
-        JButton chartButton = createAccentButton("Genera Grafico");
+        JButton pdfButton = createFlatButton("Genera PDF");
+        JButton chartButton = createFlatButton("Genera Grafico");
 
         pdfButton.addActionListener(e -> generatePdf());
         chartButton.addActionListener(e -> {
-            int start = (Integer) startYearSpinner.getValue();
-            int end = (Integer) endYearSpinner.getValue();
-            new AirQualityChart(start, end).setVisible(true);
+            String region = (String) regionComboGlobal.getSelectedItem();
+            new AirQualityChart(
+                    (Integer) startYearSpinner.getValue(),
+                    (Integer) endYearSpinner.getValue(),
+                    region
+            ).setVisible(true);
         });
 
         footer.add(pdfButton);
@@ -158,10 +180,9 @@ public class ReportAndChartFrame extends JFrame {
     /* =======================
        CSV CARD
      ======================= */
-    private JPanel createCsvCard(String title,
-                                 String subtitle,
+    private JPanel createCsvCard(String title, String subtitle,
                                  DefaultListModel<File> model,
-                                 Runnable loaderAction) {
+                                 boolean air) {
 
         JPanel card = new JPanel(new BorderLayout(10, 10));
         card.setBackground(BG_PANEL);
@@ -175,7 +196,6 @@ public class ReportAndChartFrame extends JFrame {
         titleLabel.setForeground(FG_TEXT);
 
         JLabel subLabel = new JLabel(subtitle);
-        subLabel.setFont(UI_FONT);
         subLabel.setForeground(FG_MUTED);
 
         JPanel header = new JPanel(new GridLayout(2, 1));
@@ -190,8 +210,8 @@ public class ReportAndChartFrame extends JFrame {
         scroll.setBorder(BorderFactory.createEmptyBorder());
         scroll.getViewport().setBackground(BG_PANEL);
 
-        JButton loadButton = createAccentButton("＋ Aggiungi CSV");
-        loadButton.addActionListener(e -> loaderAction.run());
+        JButton loadButton = createFlatButton("＋ Aggiungi CSV");
+        loadButton.addActionListener(e -> loadCsvWithRegion(model, air));
 
         card.add(header, BorderLayout.NORTH);
         card.add(scroll, BorderLayout.CENTER);
@@ -201,52 +221,38 @@ public class ReportAndChartFrame extends JFrame {
     }
 
     /* =======================
-       CSV LOAD
+       CSV LOAD CON REGIONE
      ======================= */
-    private void loadAirQualityCsv() {
-        loadCsvGeneric(airQualityModel, true);
-    }
+    private void loadCsvWithRegion(DefaultListModel<File> model, boolean air) {
+        String region = askRegion();
+        if (region == null) return;
 
-    private void loadMortalityCsv() {
-        loadCsvGeneric(mortalityModel, false);
-    }
-
-    private void loadCsvGeneric(DefaultListModel<File> model, boolean air) {
         File[] files = chooseCsvFiles();
-        if (files == null || files.length == 0) return;
+        if (files == null) return;
 
         LoadingDialog dialog = new LoadingDialog(this, files.length);
 
         SwingWorker<Void, Integer> worker = new SwingWorker<>() {
-            @Override
             protected Void doInBackground() throws Exception {
                 for (int i = 0; i < files.length; i++) {
                     if (dialog.isCancelled()) break;
                     if (air)
-                        estrattore.importAirQualityToDb(files[i].getAbsolutePath());
+                        estrattore.importAirQualityToDb(files[i].getAbsolutePath(), region);
                     else
-                        estrattore.importMortalityToDb(files[i].getAbsolutePath());
+                        estrattore.importMortalityToDb(files[i].getAbsolutePath(), region);
                     publish(i + 1);
                 }
                 return null;
             }
 
-            @Override
-            protected void process(java.util.List<Integer> chunks) {
-                int c = chunks.get(chunks.size() - 1);
-                dialog.update(c, files[c - 1].getName());
+            protected void process(java.util.List<Integer> c) {
+                int v = c.get(c.size() - 1);
+                dialog.update(v, files[v - 1].getName());
             }
 
-            @Override
             protected void done() {
                 dialog.dispose();
-                try {
-                    get();
-                    if (!dialog.isCancelled())
-                        for (File f : files) model.addElement(f);
-                } catch (Exception e) {
-                    showError(e.getMessage());
-                }
+                filesToModel(model, files);
             }
         };
 
@@ -254,9 +260,28 @@ public class ReportAndChartFrame extends JFrame {
         dialog.setVisible(true);
     }
 
+    private void filesToModel(DefaultListModel<File> model, File[] files) {
+        for (File f : files) model.addElement(f);
+    }
+
     /* =======================
        UTILS
      ======================= */
+    private String askRegion() {
+        JComboBox<String> combo = new JComboBox<>(REGIONI);
+        styleComponent(combo);
+
+        int res = JOptionPane.showConfirmDialog(
+                this, combo, "Seleziona Regione",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        return res == JOptionPane.OK_OPTION
+                ? (String) combo.getSelectedItem()
+                : null;
+    }
+
     private File[] chooseCsvFiles() {
         JFileChooser chooser = new JFileChooser();
         chooser.setMultiSelectionEnabled(true);
@@ -272,7 +297,8 @@ public class ReportAndChartFrame extends JFrame {
                     (Integer) startYearSpinner.getValue(),
                     (Integer) endYearSpinner.getValue(),
                     titleField.getText(),
-                    descriptionArea.getText()
+                    descriptionArea.getText(),
+                    (String) regionComboGlobal.getSelectedItem()
             );
             JOptionPane.showMessageDialog(this, "PDF generato correttamente");
         } catch (Exception e) {
@@ -321,13 +347,50 @@ public class ReportAndChartFrame extends JFrame {
         list.setSelectionForeground(Color.WHITE);
     }
 
-    private JButton createAccentButton(String text) {
+    private JButton createPrimaryButton(String text) {
         JButton b = new JButton(text);
-        b.setFont(UI_FONT);
+        b.setFont(UI_FONT.deriveFont(Font.BOLD));
         b.setForeground(Color.WHITE);
         b.setBackground(ACCENT);
         b.setFocusPainted(false);
-        b.setBorder(BorderFactory.createEmptyBorder(8, 18, 8, 18));
+        b.setBorder(BorderFactory.createEmptyBorder(10, 22, 10, 22));
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        b.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                b.setBackground(ACCENT.brighter());
+            }
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                b.setBackground(ACCENT);
+            }
+        });
+
         return b;
     }
+
+    private JButton createFlatButton(String text) {
+        JButton b = new JButton(text);
+        b.setFont(UI_FONT);
+        b.setForeground(BTN_TEXT);
+        b.setBackground(BTN_BG);
+        b.setFocusPainted(false);
+        b.setContentAreaFilled(true);
+        b.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BTN_BORDER),
+                BorderFactory.createEmptyBorder(8, 18, 8, 18)
+        ));
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        b.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                b.setBackground(BTN_HOVER);
+            }
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                b.setBackground(BTN_BG);
+            }
+        });
+
+        return b;
+    }
+
 }
