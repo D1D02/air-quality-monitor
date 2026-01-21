@@ -2,6 +2,7 @@ package gui;
 
 import air_quality.AirQualityStats;
 import air_quality.MortalityStats;
+import service.CorrelationService;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -30,6 +31,8 @@ public class AirQualityChart extends JFrame {
 
     private int startYear, endYear;
     private String region;
+    
+    private JLabel correlationLabel;
 
     private String selectedPollutant = null; // solo uno
     private Set<String> selectedCauses = new HashSet<>();
@@ -118,6 +121,14 @@ public class AirQualityChart extends JFrame {
         title.setFont(new Font("Segoe UI", Font.BOLD, 14));
         panel.add(title);
         panel.add(Box.createRigidArea(new Dimension(0, 10)));
+        
+        correlationLabel = new JLabel("");
+        correlationLabel.setForeground(ACCENT);
+        correlationLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        correlationLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+
+        panel.add(correlationLabel);
+
 
         panel.add(new JScrollPane(new JPanel())); // placeholder
         return panel;
@@ -209,6 +220,44 @@ public class AirQualityChart extends JFrame {
 
         plot.getRangeAxis(0).setAutoRange(true);
         plot.getRangeAxis(1).setAutoRange(true);
+        updateCorrelationLabel();
     }
+    
+    private void updateCorrelationLabel() {
+
+        // Deve esserci 1 solo inquinante e 1 sola causa
+        if (selectedPollutant == null || selectedCauses.size() != 1) {
+            correlationLabel.setText("");
+            return;
+        }
+
+        String cause = selectedCauses.iterator().next();
+
+        Map<String, Double> airData =
+                airStats.getStatsByYears(startYear, endYear, region);
+
+        Map<Integer, Map<String, Integer>> mortData =
+                mortStats.getStatsByYears(startYear, endYear, region);
+
+        CorrelationService correlationService =
+                new CorrelationService(airData, mortData);
+
+        double corr = correlationService.getCorrelation(
+                selectedPollutant,
+                cause,
+                startYear,
+                endYear
+        );
+
+        correlationLabel.setText(
+            String.format(
+                "Correlazione %s ↔ %s: %.3f",
+                selectedPollutant,
+                cause,
+                corr
+            )
+        );
+    }
+
 
 }

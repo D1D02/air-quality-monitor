@@ -34,7 +34,7 @@ public class ReportService {
         List<CorrelationResult> allResults = new ArrayList<>();
 
         try {
-            PdfWriter.getInstance(document, new FileOutputStream("Report_Finale_Analisi.pdf"));
+            PdfWriter.getInstance(document, new FileOutputStream(toPdfFileName(title)));
             document.open();
 
             /* =======================
@@ -211,4 +211,16 @@ public class ReportService {
         cell.setHorizontalAlignment(Element.ALIGN_CENTER);
         return cell;
     }
+    
+    public static String toPdfFileName(String input) {
+        if (input == null || input.isBlank()) {
+            return "documento.pdf";
+        }
+
+        return input
+                .trim()
+                .replaceAll("\\s+", "_")
+                .concat(".pdf");
+    }
+
 }
