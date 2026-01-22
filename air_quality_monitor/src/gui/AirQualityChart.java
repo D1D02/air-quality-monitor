@@ -51,7 +51,15 @@ public class AirQualityChart extends JFrame {
         setSize(1000, 700);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-
+        
+        try {
+            setIconImage(new ImageIcon(
+                   getClass().getResource("/icons/app.png")
+            ).getImage());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+        
         getContentPane().setBackground(BG_DARK);
         setLayout(new BorderLayout(10, 10));
 
