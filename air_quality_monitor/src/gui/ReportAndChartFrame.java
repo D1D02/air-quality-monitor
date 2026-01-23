@@ -117,7 +117,7 @@ public class ReportAndChartFrame extends JFrame {
         titleField = createTextField("Rapporto Ambientale e Sanitario");
         gbc.gridx = 1; gbc.gridwidth = 5;
         header.add(titleField, gbc);
-
+        
         // Descrizione
         gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 1;
         header.add(createLabel("Descrizione"), gbc);
@@ -129,6 +129,20 @@ public class ReportAndChartFrame extends JFrame {
         gbc.gridx = 1; gbc.gridwidth = 5;
         header.add(scroll, gbc);
 
+        try {
+            setIconImage(new ImageIcon(
+                   getClass().getResource("/icons/app.png")
+            ).getImage());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+        
+        JButton uartButton = new JButton("Monitor UART");
+        uartButton.addActionListener(e ->
+                SerialUARTChartFrame.open()
+        );
+
+        header.add(uartButton);
         return header;
     }
 
@@ -212,7 +226,7 @@ public class ReportAndChartFrame extends JFrame {
 
         JButton loadButton = createFlatButton("＋ Aggiungi CSV");
         loadButton.addActionListener(e -> loadCsvWithRegion(model, air));
-
+        
         card.add(header, BorderLayout.NORTH);
         card.add(scroll, BorderLayout.CENTER);
         card.add(loadButton, BorderLayout.SOUTH);

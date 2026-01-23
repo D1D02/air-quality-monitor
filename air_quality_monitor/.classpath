@@ -14,5 +14,6 @@
 	<classpathentry kind="lib" path="C:/Users/arrow/Documents/università/IOS/air-quality-monitor/air_quality_monitor/lib/commons-csv-1.10.0.jar"/>
 	<classpathentry kind="lib" path="C:/Users/arrow/Documents/università/IOS/air-quality-monitor/air_quality_monitor/lib/sqlite-jdbc-3.51.1.0.jar"/>
 	<classpathentry kind="lib" path="C:/Users/arrow/Documents/università/IOS/air-quality-monitor/air_quality_monitor/lib/openpdf-1.3.30.jar"/>
+	<classpathentry kind="lib" path="C:/Users/arrow/Downloads/jSerialComm-2.11.4.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

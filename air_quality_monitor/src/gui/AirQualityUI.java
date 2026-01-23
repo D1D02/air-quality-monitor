@@ -1,5 +1,6 @@
 package gui;
 
+import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -32,6 +33,14 @@ public class AirQualityUI extends JFrame {
         
         mainPanel.add(titleLabel, BorderLayout.NORTH);
         mainPanel.add(statusLabel, BorderLayout.CENTER);
+        
+        try {
+            setIconImage(new ImageIcon(
+                   getClass().getResource("/icons/app.png")
+            ).getImage());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
         
         add(mainPanel);
     }
