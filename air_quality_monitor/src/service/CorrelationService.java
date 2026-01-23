@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-
 public class CorrelationService {
 
     private final Map<String, Double> aqData;
